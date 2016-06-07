@@ -4,8 +4,8 @@ import React from 'react';
 import {createApp} from '../lib/app';
 import {
   injectLoader,
-  injectEnvironment,
   render,
+  ClientApp,
 } from '../lib/client';
 
 function Component(props) {
@@ -39,7 +39,7 @@ describe('Client', () => {
 
     const path = '/posts/1234';
     const doc = {};
-    injectEnvironment({
+    const clientApp = new ClientApp(app, {
       location: {
         pathname: path,
         search: '',
@@ -54,8 +54,7 @@ describe('Client', () => {
         done();
       }
     });
-
-    render(app, null).catch(done);
+    clientApp.start().catch(done);
   });
 
   it('should render app with preload data', done => {
@@ -70,7 +69,7 @@ describe('Client', () => {
 
     const path = '/posts/1234';
     const doc = {};
-    injectEnvironment({
+    const clientApp = new ClientApp(app, {
       location: {
         pathname: path,
         search: '',
@@ -89,7 +88,6 @@ describe('Client', () => {
         done();
       }
     });
-
-    render(app, null).catch(done);
+    clientApp.start().catch(done);
   });
 });
