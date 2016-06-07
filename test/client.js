@@ -12,27 +12,30 @@ function Component(props) {
   return React.createElement('div', null, props.data.post.title);
 }
 
+const handler = {
+  component: Component,
+
+  load(request) {
+    return request.loader.get().then(post => ({
+      path: request.path,
+      post,
+    }))
+  },
+
+  renderTitle(data) { return data.post.title; },
+  renderMeta(data) { return {description: data.post.title}; },
+};
+
 describe('Client', () => {
-  it('should render app', done => {
+  it('should render app without preload data', done => {
     const app = createApp();
-    const loader = new Object();
-    injectLoader(loader);
-
-    const handler = {
-      component: Component,
-
-      load(request) {
-        assert.equal(request.loader, loader);
-        return Promise.resolve({
-          path: request.path,
-          post: { title: 'Hello!' },
-        })
-      },
-
-      renderTitle(data) { return data.post.title; },
-      renderMeta(data) { return {description: data.post.title}; },
-    };
     app.route('/posts/:id', handler);
+
+    injectLoader({
+      get() {
+        return Promise.resolve({ title: 'Hello!' });
+      }
+    });
 
     const path = '/posts/1234';
     const doc = {};
@@ -42,6 +45,41 @@ describe('Client', () => {
         search: '',
       },
       document: doc,
+      render(element) {
+        assert.deepEqual(element.props.data, {
+          path,
+          post: { title: 'Hello!' }
+        });
+        assert.equal(doc.title, 'Hello!');
+        done();
+      }
+    });
+
+    render(app, null).catch(done);
+  });
+
+  it('should render app with preload data', done => {
+    const app = createApp();
+    app.route('/posts/:id', handler);
+
+    injectLoader({
+      get() {
+        assert.fail('should not be called because preload data exists');
+      }
+    });
+
+    const path = '/posts/1234';
+    const doc = {};
+    injectEnvironment({
+      location: {
+        pathname: path,
+        search: '',
+      },
+      document: doc,
+      preloadData: {
+        path,
+        post: { title: 'Hello!' },
+      },
       render(element) {
         assert.deepEqual(element.props.data, {
           path,
