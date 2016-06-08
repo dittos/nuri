@@ -15,14 +15,16 @@ app.route('/', {
       ] });
     }
 
-    return React.createElement('div', null,
-      React.createElement('ul', null,
-        props.data.posts.map(post => React.createElement('li', {key: post.id},
-          React.createElement('a', {href: `/posts/${post.id}`}, post.title)
-        ))
-      ),
-      React.createElement('button', {onClick: addItem}, 'Add Item')
-    );
+    return <div>
+      <ul>
+        {props.data.posts.map(post =>
+          <li key={post.id}>
+            <a href={`/posts/${post.id}`}>{post.title}</a>
+          </li>
+        )}
+      </ul>
+      <button onClick={addItem}>Add Item</button>
+    </div>;
   },
 
   load(request) {
@@ -32,9 +34,9 @@ app.route('/', {
 
 app.route('/posts/:id', {
   component(props) {
-    return React.createElement('div', null,
-      React.createElement('h1', null, props.data.title)
-    );
+    return <div>
+      <h1>{props.data.title}</h1>
+    </div>;
   },
 
   load(request) {
