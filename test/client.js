@@ -69,7 +69,8 @@ describe('Client', () => {
 
     const path = '/posts/1234';
     const doc = {};
-    const clientApp = new ClientApp(app, {
+    let setData;
+    const environ = {
       location: {
         pathname: path,
         search: '',
@@ -85,9 +86,19 @@ describe('Client', () => {
           post: { title: 'Hello!' }
         });
         assert.equal(doc.title, 'Hello!');
-        done();
+        setData = element.props.setData;
       }
-    });
-    clientApp.start().catch(done);
+    };
+    const clientApp = new ClientApp(app, environ);
+    clientApp.start().then(() => {
+      environ.render = element => {
+        assert.deepEqual(element.props.data, {
+          path,
+          post: { title: 'Updated' }
+        });
+        done();
+      };
+      setData({ post: {title: 'Updated'} });
+    }).catch(done);
   });
 });
