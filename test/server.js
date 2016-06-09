@@ -1,12 +1,12 @@
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import React from 'react';
-import {createApp} from '../lib/app';
+import {createApp} from '../src/app';
 import {
   injectLoaderFactory,
   createRequest,
   render,
-} from '../lib/server';
+} from '../src/server';
 
 function Component(props) {
   return React.createElement('div', null, props.data.post.title);

@@ -2,13 +2,13 @@ import {describe, it} from 'mocha';
 import assert from 'assert';
 import sinon from 'sinon';
 import React from 'react';
-import {createApp} from '../lib/app';
+import {createApp} from '../src/app';
 import {
   injectLoader,
   render,
   ClientApp,
-} from '../lib/client';
-import {DefaultEnvironment} from '../lib/env';
+} from '../src/client';
+import {DefaultEnvironment} from '../src/env';
 
 function Component(props) {
   return React.createElement('div', null, props.data.post.title);

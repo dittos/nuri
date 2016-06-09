@@ -1,5 +1,5 @@
 import React from 'react';
-import {createApp} from '../lib/app';
+import {createApp} from '../src/app';
 
 const app = createApp();
 

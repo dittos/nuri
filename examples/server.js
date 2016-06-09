@@ -1,6 +1,6 @@
 import 'isomorphic-fetch';
 import express from 'express';
-import {injectLoaderFactory, createRequest, render} from '../lib/server';
+import {injectLoaderFactory, createRequest, render} from '../src/server';
 import app from './app';
 
 const server = express();
