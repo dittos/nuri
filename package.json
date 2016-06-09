@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --compilers js:babel-register",
-    "start": "webpack --context examples/ --config examples/webpack.config.js && babel-node examples/server.js"
+    "start": "webpack --context examples/ --config examples/webpack.config.js && babel-node examples/server.js",
+    "build": "babel -d lib/ src/"
   },
   "keywords": [],
   "author": "Taeho Kim",
