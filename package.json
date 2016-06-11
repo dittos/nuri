@@ -8,6 +8,9 @@
     "start": "webpack --context examples/ --config examples/webpack.config.js && babel-node examples/server.js",
     "build": "babel -d lib/ src/"
   },
+  "files": [
+    "lib/"
+  ],
   "keywords": [],
   "author": "Taeho Kim",
   "license": "MIT",
