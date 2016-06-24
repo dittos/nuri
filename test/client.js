@@ -93,7 +93,9 @@ describe('Client', () => {
       env.setTitle.verify();
 
       env.render = sinon.mock().once();
-      element.props.setData({ post: {title: 'Updated'} });
+      element.props.writeData(data => {
+        data.post.title = 'Updated';
+      });
       const updatedElement = env.render.firstCall.args[0];
       assert.deepEqual(updatedElement.props.data, {
         path,

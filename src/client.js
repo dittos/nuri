@@ -1,7 +1,7 @@
 /* @flow */
 
 import React from 'react';
-import type {App, Request, WireObject, RouteHandler, RouteComponent} from './app';
+import type {App, Request, WireObject, RouteHandler, RouteComponent, DataUpdater} from './app';
 import type {Environment} from './env';
 import {matchRoute, createRouteElement} from './app';
 import {DefaultEnvironment} from './env';
@@ -64,17 +64,16 @@ class RouteState {
     this.data = data;
   }
 
-  setData(updates: WireObject) {
-    const nextData = {};
-    Object.assign(nextData, this.data, updates);
-    this.data = nextData;
+  writeData(updater: DataUpdater) {
+    // TODO: batch updates
+    updater(this.data);
     this.render();
   }
 
   render() {
     const element = createRouteElement(this.component, {
       data: this.data,
-      setData: this.setData.bind(this),
+      writeData: this.writeData.bind(this),
     });
     this.environ.render(element);
   }

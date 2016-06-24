@@ -77,9 +77,12 @@ export function matchRoute(request: Request): ?MatchedRequest {
   return null;
 }
 
+// TODO: callback
+export type DataUpdater = (data: WireObject) => void;
+
 export function createRouteElement(component: RouteComponent, props: {
   data: WireObject,
-  setData: (updates: WireObject) => void,
+  writeData: (updater: DataUpdater) => void,
 }): React.Element {
   return React.createElement(component, props);
 }

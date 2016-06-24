@@ -6,13 +6,12 @@ const app = createApp();
 app.route('/', {
   component(props) {
     function addItem() {
-      props.setData({ posts: [
-        {
+      props.writeData(data => {
+        data.posts.push({
           id: Date.now(),
           title: new Date().toString()
-        },
-        ...props.data.posts
-      ] });
+        });
+      });
     }
 
     return <div>

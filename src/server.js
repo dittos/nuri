@@ -2,7 +2,7 @@
 
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import type {App, Request, Wire, WireObject} from './app';
+import type {App, Request, Wire, WireObject, DataUpdater} from './app';
 import {matchRoute, createRouteElement} from './app';
 
 type ServerRequest = {
@@ -32,7 +32,7 @@ export function createRequest(app: App, serverRequest: ServerRequest): Request {
   };
 }
 
-function noOpSetData(updates: WireObject) {}
+function noOpWriteData(updater: DataUpdater) {}
 
 export function render(request: Request): Promise<RenderResult> {
   const matchedRequest = matchRoute(request);
@@ -44,7 +44,7 @@ export function render(request: Request): Promise<RenderResult> {
   return dataPromise.then(data => {
     const element = createRouteElement(handler.component, {
       data,
-      setData: noOpSetData,
+      writeData: noOpWriteData,
     });
     const html = ReactDOMServer.renderToString(element);
     return {
