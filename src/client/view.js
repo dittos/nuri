@@ -2,15 +2,17 @@
 
 import React from 'react';
 import type {DataUpdater} from '../app';
-import {createRouteElement} from '../app';
+import {createRouteElement} from '../components';
 import type {Environment} from './env';
-import type {AppState} from './controller';
+import type {AppState, AppController} from './controller';
 
 export class AppView {
+  controller: AppController;
   environ: Environment;
   state: ?AppState;
 
-  constructor(environ: Environment) {
+  constructor(controller: AppController, environ: Environment) {
+    this.controller = controller;
     this.environ = environ;
     this.state = null;
   }
@@ -30,6 +32,7 @@ export class AppView {
       this.environ.setTitle(handler.renderTitle(data));
     }
     const element = createRouteElement(handler.component, {
+      controller: this.controller,
       data,
       writeData: this.writeData.bind(this, this.state),
     });

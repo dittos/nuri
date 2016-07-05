@@ -3,7 +3,8 @@
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import type {App, Request, Wire, WireObject, PreloadData, DataUpdater} from './app';
-import {matchRoute, createRouteElement} from './app';
+import {matchRoute} from './app';
+import {createRouteElement} from './components';
 
 type ServerRequest = {
   path: string;

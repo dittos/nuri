@@ -1,5 +1,5 @@
 import React from 'react';
-import {createApp} from '../src/app';
+import {createApp, Link} from '../src';
 
 const app = createApp();
 
@@ -18,7 +18,7 @@ app.route('/', {
       <ul>
         {props.data.posts.map(post =>
           <li key={post.id}>
-            <a href={`/posts/${post.id}`}>{post.title}</a>
+            <Link to={`/posts/${post.id}`}>{post.title}</Link>
           </li>
         )}
       </ul>
