@@ -49,7 +49,7 @@ server.get('/api/posts/:id', (req, res) => {
 });
 
 server.get('*', (req, res, next) => {
-  render(createRequest(app, req)).then(result => {
+  render(app, req).then(result => {
     sendResponse(res, result);
   }).catch(next);
 });

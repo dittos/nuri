@@ -12,7 +12,7 @@ describe('App', () => {
     const app = createApp();
     const handler = {
       component: Component,
-      load: () => ({}),
+      load: () => Promise.resolve({}),
     };
     app.route('/posts/:id', handler);
 

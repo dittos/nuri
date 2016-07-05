@@ -2,7 +2,7 @@
 
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import type {App, Request, Wire, WireObject, DataUpdater} from './app';
+import type {App, Request, Wire, WireObject, PreloadData, DataUpdater} from './app';
 import {matchRoute, createRouteElement} from './app';
 
 type ServerRequest = {
@@ -12,7 +12,7 @@ type ServerRequest = {
 
 type RenderResult = {
   html: string;
-  preloadData: Wire;
+  preloadData: PreloadData;
   title?: string;
   meta?: WireObject;
 };
@@ -23,18 +23,15 @@ export function injectLoaderFactory(loaderFactory: typeof _loaderFactory) {
   _loaderFactory = loaderFactory;
 }
 
-export function createRequest(app: App, serverRequest: ServerRequest): Request {
-  return {
+function noOpWriteData(updater: DataUpdater) {}
+
+export function render(app: App, serverRequest: ServerRequest): Promise<RenderResult> {
+  const request = {
     app,
     loader: _loaderFactory(serverRequest),
     path: serverRequest.path,
     query: serverRequest.query,
   };
-}
-
-function noOpWriteData(updater: DataUpdater) {}
-
-export function render(request: Request): Promise<RenderResult> {
   const matchedRequest = matchRoute(request);
   if (!matchedRequest)
     return Promise.reject();

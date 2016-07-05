@@ -1,108 +1,101 @@
-import {describe, it} from 'mocha';
+import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
 import sinon from 'sinon';
-import React from 'react';
-import {createApp} from '../src/app';
 import {
-  injectLoader,
-  render,
-  ClientApp,
+  createApp,
+} from '../src/app';
+import {
+  AppController,
 } from '../src/client';
-import {DefaultEnvironment} from '../src/env';
 
-function Component(props) {
-  return React.createElement('div', null, props.data.post.title);
-}
+function noOp() {}
 
-const handler = {
-  component: Component,
+describe('AppController', () => {
+  const path = '/posts/1234';
+  let currentPath;
+  let currentToken;
+  let env;
+  let controller;
+  let handler;
+  let load;
 
-  load(request) {
-    return request.loader().then(post => ({
-      path: request.path,
-      post,
-    }))
-  },
-
-  renderTitle(data) { return data.post.title; },
-  renderMeta(data) { return {description: data.post.title}; },
-};
-
-describe('Client', () => {
-  it('should render app without preload data', done => {
-    const app = createApp();
-    app.route('/posts/:id', handler);
-
-    injectLoader(() => Promise.resolve({ title: 'Hello!' }));
-
-    const path = '/posts/1234';
-    const doc = {};
-
-    const env = {
-      render: sinon.mock().once(),
-      setTitle: sinon.mock().once().withExactArgs('Hello!'),
+  beforeEach(() => {
+    currentToken = null;
+    env = {
+      render: noOp,
+      setTitle: noOp,
       getPath: () => path,
       getQuery: () => ({}),
-      getPreloadData: () => ({
-        path,
-        post: { title: 'Hello!' },
-      }),
+      getHistoryToken: () => currentToken,
+      setHistoryToken: (token) => { currentToken = token },
+      setLocationChangeListener: noOp,
+      pushLocation: (path, token) => {
+        currentPath = path;
+        currentToken = token;
+      },
     };
-    const clientApp = new ClientApp(app, env);
-    clientApp.start().then(() => {
-      const element = env.render.firstCall.args[0];
-      assert.deepEqual(element.props.data, {
-        path,
-        post: { title: 'Hello!' }
-      });
-      env.render.verify();
-      env.setTitle.verify();
-      done();
-    }).catch(done);
+    const app = createApp();
+    handler = {
+      load(request) {
+        return Promise.resolve({
+          id: request.params.id,
+          fromLoader: true
+        });
+      }
+    };
+    app.route('/posts/:id', handler);
+    controller = new AppController(app, env);
   });
 
-  it('should render app with preload data', done => {
-    const app = createApp();
-    app.route('/posts/:id', handler);
-
-    const path = '/posts/1234';
-    const doc = {};
-
-    const loader = sinon.mock().never();
-    injectLoader(loader);
-
-    const env = {
-      render: sinon.mock().once(),
-      setTitle: sinon.mock().once().withExactArgs('Hello!'),
-      getPath: () => path,
-      getQuery: () => ({}),
-      getPreloadData: () => ({
-        path,
-        post: { title: 'Hello!' },
-      }),
-    };
-    const clientApp = new ClientApp(app, env);
-    clientApp.start().then(() => {
-      loader.verify();
-      const element = env.render.firstCall.args[0];
-      assert.deepEqual(element.props.data, {
-        path,
-        post: { title: 'Hello!' }
-      });
-      env.render.verify();
-      env.setTitle.verify();
-
-      env.render = sinon.mock().once();
-      element.props.writeData(data => {
-        data.post.title = 'Updated';
-      });
-      const updatedElement = env.render.firstCall.args[0];
-      assert.deepEqual(updatedElement.props.data, {
-        path,
-        post: { title: 'Updated' }
-      });
-      env.render.verify();
+  it('should start without preload data', done => {
+    controller.subscribe(() => {
+      const state = controller.state;
+      assert.equal(state.handler, handler);
+      assert.equal(state.data.fromLoader, true);
+      assert.ok(currentToken);
       done();
-    }).catch(done);
+    });
+    controller.start();
+  });
+
+  it('should start with preload data and no history token', done => {
+    controller.subscribe(() => {
+      const state = controller.state;
+      assert.equal(state.handler, handler);
+      assert.equal(state.data.fromLoader, false);
+      assert.ok(currentToken);
+      done();
+    });
+    const preloadData = {id: '1234', fromLoader: false};
+    controller.start(preloadData);
+  });
+
+  it('should ignore preload data when history token is set', done => {
+    currentToken = 'token';
+    controller.subscribe(() => {
+      const state = controller.state;
+      assert.equal(state.handler, handler);
+      assert.equal(state.data.fromLoader, true);
+      assert.notEqual(currentToken, 'token');
+      assert.ok(currentToken);
+      done();
+    });
+    const preloadData = {id: '1234', fromLoader: false};
+    controller.start(preloadData);
+  });
+
+  it('should cancel inflight load', done => {
+    var callCount = 0;
+    controller.subscribe(() => {
+      callCount++;
+      if (callCount === 1) {
+        process.nextTick(() => {
+          assert.equal(callCount, 1);
+          done();
+        });
+      }
+    });
+    controller.start();
+    controller.load('/posts/4567');
   });
 });

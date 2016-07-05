@@ -3,23 +3,22 @@
 import querystring from 'querystring';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import type {WireObject} from './app';
+import type {WireObject} from '../app';
 
 export interface Environment {
   render(element: React.Element): any;
   setTitle(title: string): void;
   getPath(): string;
   getQuery(): WireObject;
-  getLocationKey(): string;
-  getPreloadData(): ?WireObject;
+  getHistoryToken(): ?string;
+  setHistoryToken(token: string): void;
   setLocationChangeListener(listener: () => void): void;
-  replaceLocation(key: string): void;
-  pushLocation(path: string, key: string): void;
+  pushLocation(path: string, token: string): void;
 }
 
 // TODO: detect pushState support
 
-export class DefaultEnvironment {
+export class BrowserEnvironment {
   container: Node;
   locationChangeListener: ?() => void;
 
@@ -51,24 +50,20 @@ export class DefaultEnvironment {
     return querystring.parse(location.search.substring(1));
   }
 
-  getLocationKey() {
-    return history.state && history.state.key;
+  getHistoryToken() {
+    return history.state && history.state.token;
   }
 
-  getPreloadData() {
-    return window.preloadData;
+  setHistoryToken(token: string) {
+    const path = location.pathname + location.search;
+    history.replaceState({ token }, '', path);
   }
 
   setLocationChangeListener(listener: () => void) {
     this.locationChangeListener = listener;
   }
 
-  replaceLocation(key: string) {
-    const path = location.pathname + location.search;
-    history.replaceState({ key }, '', path);
-  }
-
-  pushLocation(path: string, key: string) {
-    history.pushState({ key }, '', path);
+  pushLocation(path: string, token: string) {
+    history.pushState({ token }, '', path);
   }
 }

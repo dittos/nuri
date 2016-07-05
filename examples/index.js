@@ -8,4 +8,4 @@ function loader(path) {
 
 injectLoader(loader);
 
-render(app, document.getElementById('app'));
+render(app, document.getElementById('app'), window.preloadData);

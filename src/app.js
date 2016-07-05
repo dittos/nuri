@@ -18,7 +18,7 @@ export type RouteComponent = ReactClass<any>;
 
 export type RouteHandler = {
   component: RouteComponent;
-  load: (request: MatchedRequest) => WireObject | Promise<WireObject>;
+  load: (request: MatchedRequest) => Promise<WireObject>;
   renderTitle?: (data: WireObject) => string;
   renderMeta?: (data: WireObject) => WireObject;
 };
@@ -34,6 +34,8 @@ export type MatchedRequest = Request & {
   handler: RouteHandler;
   params: {[key: string]: any};
 };
+
+export type PreloadData = WireObject;
 
 export class App {
   routes: Array<Route>;
