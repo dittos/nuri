@@ -14,6 +14,8 @@ export function injectLoader(loader: typeof _loader) {
 export type AppState = {
   handler: RouteHandler;
   data: WireObject;
+  scrollX: number;
+  scrollY: number;
 };
 
 export class AppController {
@@ -49,6 +51,7 @@ export class AppController {
 
     this.started = true;
     this.environ.setLocationChangeListener(this._onLocationChange.bind(this));
+    this.environ.setScrollChangeListener(this._onScrollChange.bind(this));
 
     const appRequest = {
       app: this.app,
@@ -68,6 +71,8 @@ export class AppController {
       const state = {
         handler,
         data: preloadData,
+        scrollX: 0,
+        scrollY: 0,
       };
       this.state = state;
       const token = uuid.v4();
@@ -79,6 +84,8 @@ export class AppController {
         const state = {
           handler,
           data,
+          scrollX: 0,
+          scrollY: 0,
         };
         this.state = state;
         const token = uuid.v4();
@@ -111,6 +118,8 @@ export class AppController {
       const state = {
         handler,
         data,
+        scrollX: 0,
+        scrollY: 0,
       };
       this.state = state;
       const token = uuid.v4();
@@ -153,6 +162,8 @@ export class AppController {
         const state = {
           handler,
           data,
+          scrollX: 0,
+          scrollY: 0,
         };
         this.state = state;
         this.cache[token] = state;
@@ -160,6 +171,14 @@ export class AppController {
       }).catch(err => {
         // TODO
       });
+    }
+  }
+
+  _onScrollChange(x: number, y: number) {
+    if (this.state) {
+      this.state.scrollX = x;
+      this.state.scrollY = y;
+      // FIXME: doesn't emit change
     }
   }
 

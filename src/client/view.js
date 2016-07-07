@@ -27,7 +27,7 @@ export class AppView {
       return;
     }
 
-    const {handler, data} = this.state;
+    const {handler, data, scrollX, scrollY} = this.state;
     if (handler.renderTitle) {
       this.environ.setTitle(handler.renderTitle(data));
     }
@@ -37,6 +37,7 @@ export class AppView {
       writeData: this.writeData.bind(this, this.state),
     });
     this.environ.render(element);
+    this.environ.scrollTo(scrollX, scrollY);
   }
 
   writeData(state: AppState, updater: DataUpdater) {

@@ -36,10 +36,11 @@ function sendResponse(res, result) {
 server.use('/assets', express.static(__dirname + '/build'));
 
 server.get('/api/posts', (req, res) => {
-  res.send([
-    {id: 2, title: 'This is ReSP'},
-    {id: 1, title: 'Hello World!'},
-  ]).end();
+  const posts = [];
+  for (var i = 1; i < 100; i++) {
+    posts.push({id: i, title: 'Post #' + i});
+  }
+  res.send(posts).end();
 });
 
 server.get('/api/posts/:id', (req, res) => {

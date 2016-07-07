@@ -14,6 +14,8 @@ export interface Environment {
   setHistoryToken(token: string): void;
   setLocationChangeListener(listener: () => void): void;
   pushLocation(path: string, token: string): void;
+  setScrollChangeListener(listener: (x: number, y: number) => void): void;
+  scrollTo(x: number, y: number): void;
 }
 
 // TODO: detect pushState support
@@ -21,6 +23,7 @@ export interface Environment {
 export class BrowserEnvironment {
   container: Node;
   locationChangeListener: ?() => void;
+  scrollChangeListener: ?(x: number, y: number) => void;
 
   constructor(container: Node) {
     this.container = container;
@@ -30,6 +33,14 @@ export class BrowserEnvironment {
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
       if (this.locationChangeListener) {
         this.locationChangeListener();
+      }
+    }, false);
+    window.addEventListener('scroll', () => {
+      if (this.scrollChangeListener) {
+        this.scrollChangeListener(
+          window.pageXOffset || document.documentElement.scrollLeft,
+          window.pageYOffset || document.documentElement.scrollTop
+        );
       }
     }, false);
   }
@@ -65,5 +76,13 @@ export class BrowserEnvironment {
 
   pushLocation(path: string, token: string) {
     history.pushState({ token }, '', path);
+  }
+
+  setScrollChangeListener(listener: (x: number, y: number) => void) {
+    this.scrollChangeListener = listener;
+  }
+
+  scrollTo(x: number, y: number) {
+    window.scrollTo(x, y);
   }
 }

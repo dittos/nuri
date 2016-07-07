@@ -6,7 +6,7 @@ import {
 } from '../src/app';
 import {
   AppController,
-} from '../src/client';
+} from '../src/client/controller';
 
 function noOp() {}
 
@@ -33,6 +33,8 @@ describe('AppController', () => {
         currentPath = path;
         currentToken = token;
       },
+      setScrollChangeListener: noOp,
+      scrollTo: noOp,
     };
     const app = createApp();
     handler = {
