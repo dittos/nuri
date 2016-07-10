@@ -52,6 +52,8 @@ describe('AppController', () => {
   it('should start without preload data', done => {
     controller.subscribe(() => {
       const state = controller.state;
+      if (!state)
+        return;
       assert.equal(state.handler, handler);
       assert.equal(state.data.fromLoader, true);
       assert.ok(currentToken);
@@ -63,6 +65,8 @@ describe('AppController', () => {
   it('should start with preload data and no history token', done => {
     controller.subscribe(() => {
       const state = controller.state;
+      if (!state)
+        return;
       assert.equal(state.handler, handler);
       assert.equal(state.data.fromLoader, false);
       assert.ok(currentToken);
@@ -76,6 +80,8 @@ describe('AppController', () => {
     currentToken = 'token';
     controller.subscribe(() => {
       const state = controller.state;
+      if (!state)
+        return;
       assert.equal(state.handler, handler);
       assert.equal(state.data.fromLoader, true);
       assert.notEqual(currentToken, 'token');
@@ -89,6 +95,9 @@ describe('AppController', () => {
   it('should cancel inflight load', done => {
     var callCount = 0;
     controller.subscribe(() => {
+      if (!controller.state)
+        return;
+
       callCount++;
       if (callCount === 1) {
         process.nextTick(() => {

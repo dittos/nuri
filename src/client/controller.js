@@ -1,7 +1,7 @@
 /* @flow */
 
 import uuid from 'uuid';
-import type {App, WireObject, PreloadData, RouteHandler} from '../app';
+import type {App, WireObject, PreloadData, MatchedRequest, RouteHandler} from '../app';
 import {matchRoute} from '../app';
 import type {Environment} from './env';
 
@@ -25,6 +25,7 @@ export class AppController {
   state: ?AppState;
   subscribers: (() => void)[];
   started: boolean;
+  loading: boolean;
   abort: () => void;
 
   constructor(app: App, environ: Environment) {
@@ -34,6 +35,7 @@ export class AppController {
     this.state = null;
     this.subscribers = [];
     this.started = false;
+    this.loading = false;
     this.abort = () => {};
   }
 
@@ -80,7 +82,7 @@ export class AppController {
       this.environ.setHistoryToken(token);
       this._emitChange();
     } else {
-      this._makeAbortable(handler.load(matchedRequest)).then(data => {
+      this._load(handler, matchedRequest).then(data => {
         const state = {
           handler,
           data,
@@ -114,7 +116,7 @@ export class AppController {
     }
     const handler = matchedRequest.handler;
 
-    this._makeAbortable(handler.load(matchedRequest)).then(data => {
+    this._load(handler, matchedRequest).then(data => {
       const state = {
         handler,
         data,
@@ -158,7 +160,7 @@ export class AppController {
       }
       const handler = matchedRequest.handler;
 
-      this._makeAbortable(handler.load(matchedRequest)).then(data => {
+      this._load(handler, matchedRequest).then(data => {
         const state = {
           handler,
           data,
@@ -184,6 +186,19 @@ export class AppController {
 
   _emitChange() {
     this.subscribers.forEach(s => s.apply(null));
+  }
+
+  _load(handler: RouteHandler, matchedRequest: MatchedRequest) {
+    this.loading = true;
+    this._emitChange();
+
+    return this._makeAbortable(handler.load(matchedRequest)).then(r => {
+      this.loading = false;
+      this._emitChange();
+      return r;
+    }).catch(err => {
+      // TODO
+    });
   }
 
   _makeAbortable(promise: Promise<any>) {
