@@ -1,19 +1,19 @@
 /* @flow */
 
 import React from 'react';
+import ReactDOM from 'react-dom';
 import type {DataUpdater} from '../app';
 import {createRouteElement} from '../components';
-import type {Environment} from './env';
 import type {AppState, AppController} from './controller';
 
 export class AppView {
   controller: AppController;
-  environ: Environment;
+  container: Node;
   state: ?AppState;
 
-  constructor(controller: AppController, environ: Environment) {
+  constructor(controller: AppController, container: Node) {
     this.controller = controller;
-    this.environ = environ;
+    this.container = container;
     this.state = null;
   }
 
@@ -29,15 +29,17 @@ export class AppView {
 
     const {handler, data, scrollX, scrollY} = this.state;
     if (handler.renderTitle) {
-      this.environ.setTitle(handler.renderTitle(data));
+      document.title = handler.renderTitle(data);
+    } else {
+      // TODO: app default title
     }
     const element = createRouteElement(handler.component, {
       controller: this.controller,
       data,
       writeData: this.writeData.bind(this, this.state),
     });
-    this.environ.render(element);
-    this.environ.scrollTo(scrollX, scrollY);
+    ReactDOM.render(element, this.container);
+    window.scrollTo(scrollX, scrollY);
   }
 
   writeData(state: AppState, updater: DataUpdater) {

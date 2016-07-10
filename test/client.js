@@ -22,8 +22,6 @@ describe('AppController', () => {
   beforeEach(() => {
     currentToken = null;
     env = {
-      render: noOp,
-      setTitle: noOp,
       getPath: () => path,
       getQuery: () => ({}),
       getHistoryToken: () => currentToken,
@@ -34,7 +32,6 @@ describe('AppController', () => {
         currentToken = token;
       },
       setScrollChangeListener: noOp,
-      scrollTo: noOp,
     };
     const app = createApp();
     handler = {

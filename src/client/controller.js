@@ -96,6 +96,7 @@ export class AppController {
         this._emitChange();
       }).catch(err => {
         // TODO
+        return Promise.reject(err);
       });
     }
   }
@@ -130,6 +131,7 @@ export class AppController {
       this._emitChange();
     }).catch(err => {
       // TODO
+      return Promise.reject(err);
     });
   }
 
@@ -172,6 +174,7 @@ export class AppController {
         this._emitChange();
       }).catch(err => {
         // TODO
+        return Promise.reject(err);
       });
     }
   }
@@ -198,6 +201,7 @@ export class AppController {
       return r;
     }).catch(err => {
       // TODO
+      return Promise.reject(err);
     });
   }
 
