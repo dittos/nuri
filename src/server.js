@@ -2,7 +2,7 @@
 
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import type {App, Request, Wire, WireObject, PreloadData, DataUpdater} from './app';
+import type {App, Request, Wire, WireObject, PreloadData, RouteHandler, DataUpdater} from './app';
 import {matchRoute} from './app';
 import {createRouteElement} from './components';
 
@@ -12,6 +12,7 @@ type ServerRequest = {
 };
 
 type RenderResult = {
+  status: number;
   html: string;
   preloadData: PreloadData;
   title?: string;
@@ -34,22 +35,27 @@ export function render(app: App, serverRequest: ServerRequest): Promise<RenderRe
     query: serverRequest.query,
   };
   const matchedRequest = matchRoute(request);
-  if (!matchedRequest)
-    return Promise.reject();
-
   const handler = matchedRequest.handler;
   const dataPromise = Promise.resolve(handler.load(matchedRequest));
-  return dataPromise.then(data => {
-    const element = createRouteElement(handler.component, {
-      data,
-      writeData: noOpWriteData,
-    });
-    const html = ReactDOMServer.renderToString(element);
-    return {
-      html,
-      preloadData: data,
-      title: handler.renderTitle ? handler.renderTitle(data) : undefined,
-      meta: handler.renderMeta ? handler.renderMeta(data) : undefined,
-    };
+  return dataPromise.then(
+    data => createResult(200, handler, data),
+    err => err.status ?
+      createResult(err.status, handler, {})
+      : Promise.reject(err)
+  );
+}
+
+function createResult(status: number, handler: RouteHandler, data: WireObject) {
+  const element = createRouteElement(handler.component, {
+    data,
+    writeData: noOpWriteData,
   });
+  const html = ReactDOMServer.renderToString(element);
+  return {
+    status,
+    html,
+    preloadData: data,
+    title: handler.renderTitle ? handler.renderTitle(data) : undefined,
+    meta: handler.renderMeta ? handler.renderMeta(data) : undefined,
+  };
 }

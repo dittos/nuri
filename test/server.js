@@ -41,6 +41,7 @@ describe('Server', () => {
     app.route('/posts/:id', handler);
 
     render(app, serverRequest).then(result => {
+      assert.equal(result.status, 200);
       assert.equal(result.html.replace(/data-react-checksum=".+"/g, 'CHECKSUM'),
         '<div data-reactroot="" data-reactid="1" CHECKSUM>Hello!</div>');
       assert.deepEqual(result.preloadData, {
@@ -49,6 +50,21 @@ describe('Server', () => {
       });
       assert.equal(result.title, 'Hello!');
       assert.deepEqual(result.meta, {description: 'Hello!'});
+      done();
+    }).catch(done);
+  });
+
+  it('should render fallback request', done => {
+    const app = createApp();
+    // something similar to Express request object
+    const serverRequest = {
+      path: '/posts/1234',
+      query: {}
+    };
+
+    render(app, serverRequest).then(result => {
+      assert.equal(result.status, 404);
+      assert.ok(result.html);
       done();
     }).catch(done);
   });

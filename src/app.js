@@ -37,14 +37,29 @@ export type MatchedRequest = Request & {
 
 export type PreloadData = WireObject;
 
+const defaultHandler: RouteHandler = {
+  load() {
+    return Promise.reject({status: 404});
+  },
+
+  component: () => null,
+};
+
 export class App {
   routes: Array<Route>;
+  defaultHandler: RouteHandler;
 
   constructor() {
     this.routes = [];
+    this.defaultHandler = defaultHandler;
   }
 
   route(path: string, handler: RouteHandler) {
+    if (path === '*') {
+      this.defaultHandler = handler;
+      return;
+    }
+
     const keys = [];
     const regexp = pathToRegexp(path, keys);
     this.routes.push({
@@ -59,7 +74,7 @@ export function createApp(): App {
   return new App();
 }
 
-export function matchRoute(request: Request): ?MatchedRequest {
+export function matchRoute(request: Request): MatchedRequest {
   const routes = request.app.routes;
   for (var i = 0; i < routes.length; i++) {
     const route = routes[i];
@@ -76,7 +91,11 @@ export function matchRoute(request: Request): ?MatchedRequest {
       };
     }
   }
-  return null;
+  return {
+    ...request,
+    handler: request.app.defaultHandler,
+    params: {},
+  };
 }
 
 // TODO: callback
