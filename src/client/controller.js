@@ -18,6 +18,8 @@ export type AppState = {
   scrollY: number;
 };
 
+type LoadType = 'start' | 'load' | 'restore';
+
 export class AppController {
   app: App;
   environ: Environment;
@@ -55,84 +57,18 @@ export class AppController {
     this.environ.setLocationChangeListener(this._onLocationChange.bind(this));
     this.environ.setScrollChangeListener(this._onScrollChange.bind(this));
 
-    const appRequest = {
-      app: this.app,
-      loader: _loader,
-      path: this.environ.getPath(),
-      query: this.environ.getQuery(),
-    };
-    const matchedRequest = matchRoute(appRequest);
-    if (!matchedRequest) {
-      // TODO
-      return;
-    }
-    const handler = matchedRequest.handler;
-
     const shouldUsePreloadData = !this.environ.getHistoryToken();
-    if (shouldUsePreloadData && preloadData) {
-      const state = {
-        handler,
-        data: preloadData,
-        scrollX: 0,
-        scrollY: 0,
-      };
-      this.state = state;
-      const token = uuid.v4();
-      this.cache[token] = state;
-      this.environ.setHistoryToken(token);
-      this._emitChange();
-    } else {
-      this._load(handler, matchedRequest).then(data => {
-        const state = {
-          handler,
-          data,
-          scrollX: 0,
-          scrollY: 0,
-        };
-        this.state = state;
-        const token = uuid.v4();
-        this.cache[token] = state;
-        this.environ.setHistoryToken(token);
-        this._emitChange();
-      }).catch(err => {
-        // TODO
-        return Promise.reject(err);
-      });
-    }
+    this._load(
+      'start',
+      this.environ.getPath(),
+      this.environ.getQuery(),
+      shouldUsePreloadData && preloadData ? preloadData : undefined
+    );
   }
 
   load(path: string, query: {[key: string]: any} = {}) {
     this.abort();
-
-    const appRequest = {
-      app: this.app,
-      loader: _loader,
-      path,
-      query,
-    };
-    const matchedRequest = matchRoute(appRequest);
-    if (!matchedRequest) {
-      // TODO
-      return;
-    }
-    const handler = matchedRequest.handler;
-
-    this._load(handler, matchedRequest).then(data => {
-      const state = {
-        handler,
-        data,
-        scrollX: 0,
-        scrollY: 0,
-      };
-      this.state = state;
-      const token = uuid.v4();
-      this.cache[token] = state;
-      this.environ.pushLocation(path, token); // TODO: query
-      this._emitChange();
-    }).catch(err => {
-      // TODO
-      return Promise.reject(err);
-    });
+    this._load('load', path, query);
   }
 
   _onLocationChange() {
@@ -149,33 +85,13 @@ export class AppController {
       this.state = cachedState;
       this._emitChange();
     } else {
-      const appRequest = {
-        app: this.app,
-        loader: _loader,
-        path: this.environ.getPath(),
-        query: this.environ.getQuery(),
-      };
-      const matchedRequest = matchRoute(appRequest);
-      if (!matchedRequest) {
-        // TODO
-        return;
-      }
-      const handler = matchedRequest.handler;
-
-      this._load(handler, matchedRequest).then(data => {
-        const state = {
-          handler,
-          data,
-          scrollX: 0,
-          scrollY: 0,
-        };
-        this.state = state;
-        this.cache[token] = state;
-        this._emitChange();
-      }).catch(err => {
-        // TODO
-        return Promise.reject(err);
-      });
+      this._load(
+        'restore',
+        this.environ.getPath(),
+        this.environ.getQuery(),
+        undefined,
+        token
+      );
     }
   }
 
@@ -187,11 +103,59 @@ export class AppController {
     }
   }
 
+  _load(type: LoadType, path: string, query: {[key: string]: any}, data?: WireObject, token?: string = uuid.v4()) {
+    const appRequest = {
+      app: this.app,
+      loader: _loader,
+      path,
+      query,
+    };
+    const matchedRequest = matchRoute(appRequest);
+    if (!matchedRequest) {
+      // TODO
+      return;
+    }
+    const handler = matchedRequest.handler;
+    if (data) {
+      // assert(action === 'start')
+      const state = {
+        handler,
+        data,
+        scrollX: 0,
+        scrollY: 0,
+      };
+      this.state = state;
+      this.cache[token] = state;
+      this.environ.setHistoryToken(token);
+      this._emitChange();
+    } else {
+      this._loadData(handler, matchedRequest).then(data => {
+        const state = {
+          handler,
+          data,
+          scrollX: 0,
+          scrollY: 0,
+        };
+        this.state = state;
+        this.cache[token] = state;
+        if (type === 'start') {
+          this.environ.setHistoryToken(token);
+        } else if (type === 'load') {
+          this.environ.pushLocation(path, token); // TODO: query
+        }
+        this._emitChange();
+      }).catch(err => {
+        // TODO
+        return Promise.reject(err);
+      });
+    }
+  }
+
   _emitChange() {
     this.subscribers.forEach(s => s.apply(null));
   }
 
-  _load(handler: RouteHandler, matchedRequest: MatchedRequest) {
+  _loadData(handler: RouteHandler, matchedRequest: MatchedRequest) {
     this.loading = true;
     this._emitChange();
 
