@@ -15,6 +15,13 @@ export class AppView {
     this.controller = controller;
     this.container = container;
     this.state = null;
+
+    window.addEventListener('scroll', () => {
+      this._onScrollChange(
+        window.pageXOffset || document.documentElement.scrollLeft,
+        window.pageYOffset || document.documentElement.scrollTop
+      );
+    }, false);
   }
 
   setState(state: ?AppState) {
@@ -49,5 +56,12 @@ export class AppView {
     // TODO: batch updates
     updater(this.state.data);
     this._render();
+  }
+
+  _onScrollChange(x: number, y: number) {
+    if (this.state) {
+      this.state.scrollX = x;
+      this.state.scrollY = y;
+    }
   }
 }

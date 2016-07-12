@@ -6,14 +6,21 @@ import {
   AppController,
 } from './controller';
 import {AppView} from './view';
-import {BrowserEnvironment} from './env';
+import {BrowserHistory} from './history';
 
 export {injectLoader} from './controller';
 
 export function render(app: App, container: Node, preloadData?: PreloadData) {
-  const environ = new BrowserEnvironment();
-  const controller = new AppController(app, environ);
+  const history = new BrowserHistory();
+  const controller = new AppController(app, history);
   const view = new AppView(controller, container);
-  controller.subscribe(() => view.setState(controller.state));
+  controller.subscribe({
+    willLoad() {},
+    didLoad() {},
+    didAbortLoad() {},
+    didCommitState() {
+      view.setState(controller.state);
+    },
+  });
   controller.start(preloadData);
 }

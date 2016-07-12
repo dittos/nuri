@@ -3,7 +3,7 @@
 import uuid from 'uuid';
 import type {App, WireObject, PreloadData, MatchedRequest, RouteHandler} from '../app';
 import {matchRoute} from '../app';
-import type {Environment} from './env';
+import type {History, Location} from './history';
 
 let _loader: any; // FIXME
 
@@ -18,34 +18,47 @@ export type AppState = {
   scrollY: number;
 };
 
-type LoadType = 'start' | 'load' | 'restore';
+export interface AppControllerDelegate {
+  willLoad(): void;
+  didLoad(): void;
+  didAbortLoad(): void;
+  didCommitState(): void;
+};
+
+type TokenAction = 'replace' | 'push';
+type PendingNavigation = {
+  action?: TokenAction;
+  location: Location;
+  aborted: boolean;
+};
+
+const generateToken = uuid.v4;
+function noOp() {}
 
 export class AppController {
   app: App;
-  environ: Environment;
+  history: History;
   cache: {[token: string]: AppState};
   state: ?AppState;
-  subscribers: (() => void)[];
+  subscribers: AppControllerDelegate[];
   started: boolean;
-  loading: boolean;
-  abort: () => void;
+  pending: ?PendingNavigation;
 
-  constructor(app: App, environ: Environment) {
+  constructor(app: App, history: History) {
     this.app = app;
-    this.environ = environ;
+    this.history = history;
     this.cache = {};
     this.state = null;
     this.subscribers = [];
     this.started = false;
-    this.loading = false;
-    this.abort = () => {};
+    this.pending = null;
   }
 
-  subscribe(subscriber: () => void) {
+  subscribe(subscriber: AppControllerDelegate) {
     this.subscribers.push(subscriber);
   }
 
-  unsubscribe(subscriber: () => void) {
+  unsubscribe(subscriber: AppControllerDelegate) {
     this.subscribers = this.subscribers.filter(s => s !== subscriber);
   }
 
@@ -54,115 +67,113 @@ export class AppController {
       return;
 
     this.started = true;
-    this.environ.setLocationChangeListener(this._onLocationChange.bind(this));
-    this.environ.setScrollChangeListener(this._onScrollChange.bind(this));
+    this.history.setLocationChangeListener(this._onLocationChange.bind(this));
 
-    const shouldUsePreloadData = !this.environ.getHistoryToken();
-    this._load(
-      'start',
-      this.environ.getPath(),
-      this.environ.getQuery(),
-      shouldUsePreloadData && preloadData ? preloadData : undefined
-    );
+    const location = this.history.getLocation();
+    const shouldUsePreloadData = !location.token;
+    location.token = generateToken();
+    this._setPending(location, 'replace');
+    if (shouldUsePreloadData && preloadData) {
+      const matchedRequest = this._matchRoute(location);
+      this._commitPending({
+        handler: matchedRequest.handler,
+        data: preloadData,
+        scrollX: 0,
+        scrollY: 0,
+      });
+    } else {
+      this._load();
+    }
   }
 
   load(path: string, query: {[key: string]: any} = {}) {
-    this.abort();
-    this._load('load', path, query);
+    this._setPending({path, query, token: generateToken()}, 'push');
+    this._load();
   }
 
-  _onLocationChange() {
-    this.abort();
-
-    const token = this.environ.getHistoryToken();
+  _onLocationChange(location: Location) {
+    const token = location.token;
     if (!token) {
       // TODO
-      return;
+      throw new Error('Unexpected state');
     }
 
+    this._setPending(location);
     const cachedState = this.cache[token];
     if (cachedState) {
-      this.state = cachedState;
-      this._emitChange();
+      this._commitPending(cachedState);
     } else {
-      this._load(
-        'restore',
-        this.environ.getPath(),
-        this.environ.getQuery(),
-        undefined,
-        token
-      );
+      this._load();
     }
   }
 
-  _onScrollChange(x: number, y: number) {
-    if (this.state) {
-      this.state.scrollX = x;
-      this.state.scrollY = y;
-    }
-  }
-
-  _load(type: LoadType, path: string, query: {[key: string]: any}, data?: WireObject, token?: string = uuid.v4()) {
+  _matchRoute(location: Location) {
     const appRequest = {
       app: this.app,
       loader: _loader,
-      path,
-      query,
+      path: location.path,
+      query: location.query,
     };
-    const matchedRequest = matchRoute(appRequest);
-    if (!matchedRequest) {
-      // TODO
-      return;
+    return matchRoute(appRequest);
+  }
+
+  _setPending(location: Location, action?: TokenAction) {
+    if (this.pending) {
+      this.pending.aborted = true;
+      this.pending = null;
+      this._notifyDelegate('didAbortLoad');
     }
-    const handler = matchedRequest.handler;
-    if (data) {
-      // assert(action === 'start')
-      const state = {
-        handler,
+    this.pending = {
+      location,
+      action,
+      aborted: false,
+    };
+  }
+
+  _load() {
+    const pending = this.pending;
+    if (!pending)
+      throw new Error('Unexpected state');
+
+    const matchedRequest = this._matchRoute(pending.location);
+    this._notifyDelegate('willLoad');
+    matchedRequest.handler.load(matchedRequest).then(data => {
+      if (pending.aborted)
+        return;
+
+      this._notifyDelegate('didLoad');
+      this._commitPending({
+        handler: matchedRequest.handler,
         data,
         scrollX: 0,
         scrollY: 0,
-      };
-      this.state = state;
-      this.cache[token] = state;
-      this.environ.setHistoryToken(token);
-      this._emitChange();
-    } else {
-      this.loading = true;
-      this._emitChange();
-
-      this._loadData(handler, matchedRequest).then(data => {
-        const state = {
-          handler,
-          data,
-          scrollX: 0,
-          scrollY: 0,
-        };
-        this.state = state;
-        this.cache[token] = state;
-        this.loading = false;
-        if (type === 'start') {
-          this.environ.setHistoryToken(token);
-        } else if (type === 'load') {
-          this.environ.pushLocation(path, token); // TODO: query
-        }
-        this._emitChange();
-      }).catch(err => {
+      });
+    }).catch(err => {
+      if (!pending.aborted) {
         // TODO
         return Promise.reject(err);
-      });
-    }
-  }
-
-  _emitChange() {
-    this.subscribers.forEach(s => s.apply(null));
-  }
-
-  _loadData(handler: RouteHandler, matchedRequest: MatchedRequest) {
-    return new Promise((resolve, reject) => {
-      this.abort = () => reject(new Error('aborted'));
-
-      handler.load(matchedRequest).then(resolve, reject);
+      }
     });
+  }
+
+  _commitPending(state: AppState) {
+    if (!this.pending)
+      throw new Error('Unexpected state');
+
+    const {location, action} = this.pending;
+    this.pending = null;
+    const token = location.token || generateToken();
+    this.state = state;
+    this.cache[token] = state;
+    if (action === 'replace') {
+      this.history.setHistoryToken(token);
+    } else if (action === 'push') {
+      this.history.pushLocation(location.path, token); // TODO: query
+    }
+    this._notifyDelegate('didCommitState');
+  }
+
+  _notifyDelegate(method: $Keys<AppControllerDelegate>) {
+    this.subscribers.forEach(s => (s: any)[method].apply(null));
   }
 }

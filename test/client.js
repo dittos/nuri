@@ -10,9 +10,28 @@ import {
 
 function noOp() {}
 
+function eventRecorder(callback) {
+  const events = [];
+
+  function record(event) {
+    events.push(event);
+    callback(event);
+  }
+
+  return {
+    events,
+
+    delegate: {
+      willLoad() { record('willLoad'); },
+      didLoad() { record('didLoad') },
+      didAbortLoad() { record('didAbortLoad') },
+      didCommitState() { record('didCommitState') },
+    }
+  };
+}
+
 describe('AppController', () => {
-  const path = '/posts/1234';
-  let currentPath;
+  let currentPath = '/posts/1234';
   let currentToken;
   let env;
   let controller;
@@ -22,16 +41,17 @@ describe('AppController', () => {
   beforeEach(() => {
     currentToken = null;
     env = {
-      getPath: () => path,
-      getQuery: () => ({}),
-      getHistoryToken: () => currentToken,
+      getLocation: () => ({
+        path: currentPath,
+        query: {},
+        token: currentToken,
+      }),
       setHistoryToken: (token) => { currentToken = token },
       setLocationChangeListener: noOp,
       pushLocation: (path, token) => {
         currentPath = path;
         currentToken = token;
       },
-      setScrollChangeListener: noOp,
     };
     const app = createApp();
     handler = {
@@ -47,63 +67,71 @@ describe('AppController', () => {
   });
 
   it('should start without preload data', done => {
-    controller.subscribe(() => {
-      const state = controller.state;
-      if (!state)
-        return;
-      assert.equal(state.handler, handler);
-      assert.equal(state.data.fromLoader, true);
-      assert.ok(currentToken);
-      done();
+    const r = eventRecorder(event => {
+      if (event === 'didCommitState') {
+        assert.deepEqual(r.events, ['willLoad', 'didLoad', 'didCommitState']);
+        const state = controller.state;
+        assert.equal(state.handler, handler);
+        assert.equal(state.data.fromLoader, true);
+        assert.ok(currentToken);
+        done();
+      }
     });
+    controller.subscribe(r.delegate);
     controller.start();
   });
 
   it('should start with preload data and no history token', done => {
-    controller.subscribe(() => {
-      const state = controller.state;
-      if (!state)
-        return;
-      assert.equal(state.handler, handler);
-      assert.equal(state.data.fromLoader, false);
-      assert.ok(currentToken);
-      done();
+    const r = eventRecorder(event => {
+      if (event === 'didCommitState') {
+        assert.deepEqual(r.events, ['didCommitState']);
+        const state = controller.state;
+        assert.equal(state.handler, handler);
+        assert.equal(state.data.fromLoader, false);
+        assert.ok(currentToken);
+        done();
+      }
     });
+    controller.subscribe(r.delegate);
     const preloadData = {id: '1234', fromLoader: false};
     controller.start(preloadData);
   });
 
   it('should ignore preload data when history token is set', done => {
     currentToken = 'token';
-    controller.subscribe(() => {
-      const state = controller.state;
-      if (!state)
-        return;
-      assert.equal(state.handler, handler);
-      assert.equal(state.data.fromLoader, true);
-      assert.notEqual(currentToken, 'token');
-      assert.ok(currentToken);
-      done();
+    const r = eventRecorder(event => {
+      if (event === 'didCommitState') {
+        assert.deepEqual(r.events, ['willLoad', 'didLoad', 'didCommitState']);
+        const state = controller.state;
+        assert.equal(state.handler, handler);
+        assert.equal(state.data.fromLoader, true);
+        assert.ok(currentToken);
+        done();
+      }
     });
+    controller.subscribe(r.delegate);
     const preloadData = {id: '1234', fromLoader: false};
     controller.start(preloadData);
   });
 
   it('should cancel inflight load', done => {
-    var callCount = 0;
-    controller.subscribe(() => {
-      if (!controller.state)
-        return;
-
-      callCount++;
-      if (callCount === 1) {
-        process.nextTick(() => {
-          assert.equal(callCount, 1);
-          done();
-        });
+    const r = eventRecorder(event => {
+      if (event === 'didCommitState') {
+        assert.deepEqual(r.events, [
+          'willLoad',
+          'didAbortLoad',
+          'willLoad',
+          'didAbortLoad',
+          'willLoad',
+          'didLoad',
+          'didCommitState'
+        ]);
+        done();
       }
     });
+    controller.subscribe(r.delegate);
     controller.start();
     controller.load('/posts/4567');
+    controller.load('/posts/9999');
   });
 });
