@@ -99,7 +99,6 @@ export class AppController {
     if (this.state) {
       this.state.scrollX = x;
       this.state.scrollY = y;
-      // FIXME: doesn't emit change
     }
   }
 
@@ -129,6 +128,9 @@ export class AppController {
       this.environ.setHistoryToken(token);
       this._emitChange();
     } else {
+      this.loading = true;
+      this._emitChange();
+
       this._loadData(handler, matchedRequest).then(data => {
         const state = {
           handler,
@@ -138,6 +140,7 @@ export class AppController {
         };
         this.state = state;
         this.cache[token] = state;
+        this.loading = false;
         if (type === 'start') {
           this.environ.setHistoryToken(token);
         } else if (type === 'load') {
@@ -156,24 +159,10 @@ export class AppController {
   }
 
   _loadData(handler: RouteHandler, matchedRequest: MatchedRequest) {
-    this.loading = true;
-    this._emitChange();
-
-    return this._makeAbortable(handler.load(matchedRequest)).then(r => {
-      this.loading = false;
-      this._emitChange();
-      return r;
-    }).catch(err => {
-      // TODO
-      return Promise.reject(err);
-    });
-  }
-
-  _makeAbortable(promise: Promise<any>) {
     return new Promise((resolve, reject) => {
       this.abort = () => reject(new Error('aborted'));
 
-      promise.then(resolve, reject);
+      handler.load(matchedRequest).then(resolve, reject);
     });
   }
 }
