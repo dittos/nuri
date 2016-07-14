@@ -19,9 +19,19 @@ export type RouteComponent = ReactClass<any>;
 
 export type RouteHandler = {
   component: RouteComponent;
-  load?: (request: MatchedRequest) => Promise<WireObject>;
+  load?: (request: Request) => Promise<WireObject>;
   renderTitle?: (data: WireObject) => string;
   renderMeta?: (data: WireObject) => WireObject;
+};
+
+export type ParsedURI = {
+  path: string;
+  query: {[key: string]: any};
+};
+
+export type RouteMatch = {
+  handler: RouteHandler;
+  params: {[key: string]: any};
 };
 
 export type Request = {
@@ -29,10 +39,6 @@ export type Request = {
   loader: any; // FIXME
   path: string;
   query: {[key: string]: any};
-};
-
-export type MatchedRequest = Request & {
-  handler: RouteHandler;
   params: {[key: string]: any};
 };
 
@@ -77,26 +83,24 @@ export function createApp(): App {
   return new App();
 }
 
-export function matchRoute(request: Request): MatchedRequest {
-  const routes = request.app.routes;
+export function matchRoute(app: App, uri: ParsedURI): RouteMatch {
+  const routes = app.routes;
   for (var i = 0; i < routes.length; i++) {
     const route = routes[i];
-    const matches = route.regexp.exec(request.path);
+    const matches = route.regexp.exec(uri.path);
     if (matches) {
       const params = {};
       for (var j = 0; j < matches.length - 1; j++) {
         params[route.keys[j].name] = decodeURIComponent(matches[j + 1]);
       }
       return {
-        ...request,
         handler: route.handler,
         params,
       };
     }
   }
   return {
-    ...request,
-    handler: request.app.defaultHandler,
+    handler: app.defaultHandler,
     params: {},
   };
 }

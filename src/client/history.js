@@ -1,19 +1,18 @@
 /* @flow */
 
 import querystring from 'querystring';
-import type {WireObject} from '../app';
+import type {ParsedURI} from '../app';
+import {uriToString} from '../util';
 
-export type Location = {
+export type Location = ParsedURI & {
   token: ?string;
-  path: string;
-  query: WireObject;
 };
 
 export interface History {
   getLocation(): Location;
   setHistoryToken(token: string): void;
   setLocationChangeListener(listener: (location: Location) => void): void;
-  pushLocation(path: string, token: string): void;
+  pushLocation(location: Location): void;
 }
 
 // TODO: detect pushState support
@@ -50,7 +49,7 @@ export class BrowserHistory {
     this.locationChangeListener = listener;
   }
 
-  pushLocation(path: string, token: string) {
-    history.pushState({ token }, '', path);
+  pushLocation(location: Location) {
+    history.pushState({ token: location.token }, '', uriToString(location));
   }
 }

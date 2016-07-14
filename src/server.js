@@ -28,16 +28,16 @@ export function injectLoaderFactory(loaderFactory: typeof _loaderFactory) {
 function noOpWriteData(updater: DataUpdater) {}
 
 export function render(app: App, serverRequest: ServerRequest): Promise<RenderResult> {
+  const {handler, params} = matchRoute(app, serverRequest);
   const request = {
     app,
     loader: _loaderFactory(serverRequest),
     path: serverRequest.path,
     query: serverRequest.query,
+    params,
   };
-  const matchedRequest = matchRoute(request);
-  const handler = matchedRequest.handler;
   const loadPromise = handler.load ?
-    handler.load(matchedRequest)
+    handler.load(request)
     : Promise.resolve({});
   return loadPromise.then(
     data => createResult(app, 200, handler, data),

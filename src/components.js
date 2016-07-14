@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type {DataUpdater, WireObject, RouteComponent} from './app';
+import {uriToString} from './util';
 import type {AppController} from './client/controller';
 
 export class ControllerProvider extends React.Component {
@@ -26,8 +27,16 @@ function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
-export function Link(props: any, context: {controller: ?AppController}) {
-  const {to, onClick, ...restProps} = props;
+export function Link(props: {
+  to: string,
+  queryParams?: {[key: string]: any},
+  onClick: any,
+}, context: {controller: ?AppController}) {
+  const { to, queryParams = {}, onClick, ...restProps } = props;
+  const uri = {
+    path: to,
+    query: queryParams,
+  };
 
   function handleClick(event) {
     var allowTransition = true;
@@ -48,11 +57,12 @@ export function Link(props: any, context: {controller: ?AppController}) {
     event.preventDefault();
 
     if (allowTransition && context && context.controller) {
-      context.controller.load(to);
+      context.controller.load(uri);
     }
   }
 
-  return <a {...restProps} href={to} onClick={handleClick} />;
+  const href = uriToString(uri);
+  return <a {...restProps} href={href} onClick={handleClick} />;
 }
 
 Link.contextTypes = {

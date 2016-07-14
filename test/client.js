@@ -131,7 +131,7 @@ describe('AppController', () => {
     });
     controller.subscribe(r.delegate);
     controller.start();
-    controller.load('/posts/4567');
-    controller.load('/posts/9999');
+    controller.load({path: '/posts/4567'});
+    controller.load({path: '/posts/9999'});
   });
 });

@@ -16,7 +16,7 @@ describe('matchRoute', () => {
     };
     app.route('/posts/:id', handler);
 
-    const request = matchRoute({app, path: '/posts/1234'});
+    const request = matchRoute(app, {path: '/posts/1234'});
     assert.equal(request.handler, handler);
     assert.deepEqual(request.params, {id: 1234});
   });
@@ -24,7 +24,7 @@ describe('matchRoute', () => {
   it('should match default fallback route', () => {
     const app = createApp();
 
-    const fallbackMatch = matchRoute({app, path: '/no-match'});
+    const fallbackMatch = matchRoute(app, {path: '/no-match'});
     assert.equal(fallbackMatch.handler, app.defaultHandler);
     assert.deepEqual(fallbackMatch.params, {});
   });
@@ -37,7 +37,7 @@ describe('matchRoute', () => {
     };
     app.route('*', handler);
 
-    const fallbackMatch = matchRoute({app, path: '/no-match'});
+    const fallbackMatch = matchRoute(app, {path: '/no-match'});
     assert.equal(fallbackMatch.handler, handler);
     assert.deepEqual(fallbackMatch.params, {});
   });

@@ -1,7 +1,7 @@
 /* @flow */
 
 import uuid from 'uuid';
-import type {App, WireObject, PreloadData, MatchedRequest, RouteHandler} from '../app';
+import type {App, WireObject, PreloadData, Request, RouteHandler, ParsedURI} from '../app';
 import {matchRoute} from '../app';
 import type {History, Location} from './history';
 
@@ -86,8 +86,8 @@ export class AppController {
     }
   }
 
-  load(path: string, query: {[key: string]: any} = {}) {
-    this._setPending({path, query, token: generateToken()}, 'push');
+  load(uri: ParsedURI) {
+    this._setPending({ ...uri, token: generateToken() }, 'push');
     this._load();
   }
 
@@ -108,13 +108,7 @@ export class AppController {
   }
 
   _matchRoute(location: Location) {
-    const appRequest = {
-      app: this.app,
-      loader: _loader,
-      path: location.path,
-      query: location.query,
-    };
-    return matchRoute(appRequest);
+    return matchRoute(this.app, location);
   }
 
   _setPending(location: Location, action?: TokenAction) {
@@ -135,11 +129,19 @@ export class AppController {
     if (!pending)
       throw new Error('Unexpected state');
 
-    const matchedRequest = this._matchRoute(pending.location);
+    const location = pending.location;
+    const {handler, params} = this._matchRoute(location);
+    const request = {
+      app: this.app,
+      loader: _loader,
+      path: location.path,
+      query: location.query,
+      params,
+    };
+
     this._notifyDelegate('willLoad');
-    const handler = matchedRequest.handler;
     const loadPromise = handler.load ?
-      handler.load(matchedRequest)
+      handler.load(request)
       : Promise.resolve({});
     loadPromise.then(data => {
       if (pending.aborted)
@@ -147,7 +149,7 @@ export class AppController {
 
       this._notifyDelegate('didLoad');
       this._commitPending({
-        handler: matchedRequest.handler,
+        handler,
         data,
         scrollX: 0,
         scrollY: 0,
@@ -172,12 +174,16 @@ export class AppController {
     if (action === 'replace') {
       this.history.setHistoryToken(token);
     } else if (action === 'push') {
-      this.history.pushLocation(location.path, token); // TODO: query
+      this.history.pushLocation({ ...location, token });
     }
     this._notifyDelegate('didCommitState');
   }
 
   _notifyDelegate(method: $Keys<AppControllerDelegate>) {
-    this.subscribers.forEach(s => (s: any)[method].apply(null));
+    this.subscribers.forEach(s => {
+      const fn = (s: any)[method];
+      if (fn)
+        fn.apply(null);
+    });
   }
 }
