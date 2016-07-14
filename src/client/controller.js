@@ -137,7 +137,11 @@ export class AppController {
 
     const matchedRequest = this._matchRoute(pending.location);
     this._notifyDelegate('willLoad');
-    matchedRequest.handler.load(matchedRequest).then(data => {
+    const handler = matchedRequest.handler;
+    const loadPromise = handler.load ?
+      handler.load(matchedRequest)
+      : Promise.resolve({});
+    loadPromise.then(data => {
       if (pending.aborted)
         return;
 

@@ -19,7 +19,7 @@ export type RouteComponent = ReactClass<any>;
 
 export type RouteHandler = {
   component: RouteComponent;
-  load: (request: MatchedRequest) => Promise<WireObject>;
+  load?: (request: MatchedRequest) => Promise<WireObject>;
   renderTitle?: (data: WireObject) => string;
   renderMeta?: (data: WireObject) => WireObject;
 };

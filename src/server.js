@@ -36,8 +36,10 @@ export function render(app: App, serverRequest: ServerRequest): Promise<RenderRe
   };
   const matchedRequest = matchRoute(request);
   const handler = matchedRequest.handler;
-  const dataPromise = Promise.resolve(handler.load(matchedRequest));
-  return dataPromise.then(
+  const loadPromise = handler.load ?
+    handler.load(matchedRequest)
+    : Promise.resolve({});
+  return loadPromise.then(
     data => createResult(app, 200, handler, data),
     err => err.status ?
       createResult(app, err.status, handler, {})
