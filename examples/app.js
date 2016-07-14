@@ -2,6 +2,7 @@ import React from 'react';
 import {createApp, Link} from '../src';
 
 const app = createApp();
+app.title = 'Hello';
 
 app.route('/', {
   component(props) {

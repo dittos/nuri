@@ -2,6 +2,7 @@
 
 import React from 'react';
 import pathToRegexp from 'path-to-regexp';
+import isFunction from 'lodash/isFunction';
 
 export type Route = {
   regexp: RegExp;
@@ -48,10 +49,12 @@ const defaultHandler: RouteHandler = {
 export class App {
   routes: Array<Route>;
   defaultHandler: RouteHandler;
+  title: string | (routeTitle: ?string) => string;
 
   constructor() {
     this.routes = [];
     this.defaultHandler = defaultHandler;
+    this.title = '';
   }
 
   route(path: string, handler: RouteHandler) {
@@ -96,6 +99,16 @@ export function matchRoute(request: Request): MatchedRequest {
     handler: request.app.defaultHandler,
     params: {},
   };
+}
+
+export function renderTitle(app: App, handler: RouteHandler, data: WireObject): string {
+  const routeTitle = handler.renderTitle ? handler.renderTitle(data) : '';
+  const titleFn: any = app.title;
+  if (isFunction(titleFn)) {
+    return titleFn(routeTitle);
+  }
+  const defaultTitle: string = titleFn;
+  return routeTitle || defaultTitle;
 }
 
 // TODO: callback

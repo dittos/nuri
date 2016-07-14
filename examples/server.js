@@ -18,7 +18,7 @@ function sendResponse(res, result) {
   res.end(`<!DOCTYPE html>
 <html>
   <head>
-    <title>${h(result.title || 'Title')}</title>
+    <title>${h(result.title)}</title>
     <!--
     ${JSON.stringify(result.meta)}
     -->

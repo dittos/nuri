@@ -3,7 +3,7 @@
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import type {App, Request, Wire, WireObject, PreloadData, RouteHandler, DataUpdater} from './app';
-import {matchRoute} from './app';
+import {matchRoute, renderTitle} from './app';
 import {createRouteElement} from './components';
 
 type ServerRequest = {
@@ -15,8 +15,8 @@ type RenderResult = {
   status: number;
   html: string;
   preloadData: PreloadData;
-  title?: string;
-  meta?: WireObject;
+  title: string;
+  meta: WireObject;
 };
 
 let _loaderFactory: (serverRequest: ServerRequest) => any;
@@ -38,14 +38,14 @@ export function render(app: App, serverRequest: ServerRequest): Promise<RenderRe
   const handler = matchedRequest.handler;
   const dataPromise = Promise.resolve(handler.load(matchedRequest));
   return dataPromise.then(
-    data => createResult(200, handler, data),
+    data => createResult(app, 200, handler, data),
     err => err.status ?
-      createResult(err.status, handler, {})
+      createResult(app, err.status, handler, {})
       : Promise.reject(err)
   );
 }
 
-function createResult(status: number, handler: RouteHandler, data: WireObject) {
+function createResult(app: App, status: number, handler: RouteHandler, data: WireObject) {
   const element = createRouteElement(handler.component, {
     data,
     writeData: noOpWriteData,
@@ -55,7 +55,7 @@ function createResult(status: number, handler: RouteHandler, data: WireObject) {
     status,
     html,
     preloadData: data,
-    title: handler.renderTitle ? handler.renderTitle(data) : undefined,
-    meta: handler.renderMeta ? handler.renderMeta(data) : undefined,
+    title: renderTitle(app, handler, data),
+    meta: handler.renderMeta ? handler.renderMeta(data) : {},
   };
 }

@@ -3,6 +3,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import type {DataUpdater} from '../app';
+import {renderTitle} from '../app';
 import {createRouteElement} from '../components';
 import type {AppState, AppController} from './controller';
 
@@ -30,20 +31,17 @@ export class AppView {
   }
 
   _render() {
-    if (!this.state) {
+    const state = this.state;
+    if (!state) {
       return;
     }
 
-    const {handler, data, scrollX, scrollY} = this.state;
-    if (handler.renderTitle) {
-      document.title = handler.renderTitle(data);
-    } else {
-      // TODO: app default title
-    }
+    const {handler, data, scrollX, scrollY} = state;
+    document.title = renderTitle(this.controller.app, handler, data);
     const element = createRouteElement(handler.component, {
       controller: this.controller,
       data,
-      writeData: this.writeData.bind(this, this.state),
+      writeData: this.writeData.bind(this, state),
     });
     ReactDOM.render(element, this.container);
     window.scrollTo(scrollX, scrollY);
