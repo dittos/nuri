@@ -10,7 +10,7 @@ import {BrowserHistory} from './history';
 
 export {injectLoader} from './controller';
 
-export function render(app: App, container: Node, preloadData?: PreloadData) {
+export function render(app: App, container: Node, preloadData?: PreloadData): AppController {
   const history = new BrowserHistory();
   const controller = new AppController(app, history);
   const view = new AppView(controller, container);
@@ -23,4 +23,5 @@ export function render(app: App, container: Node, preloadData?: PreloadData) {
     },
   });
   controller.start(preloadData);
+  return controller;
 }
