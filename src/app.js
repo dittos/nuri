@@ -34,9 +34,11 @@ export type RouteMatch = {
   params: {[key: string]: any};
 };
 
+export type Loader = any; // FIXME
+
 export type Request = {
   app: App;
-  loader: any; // FIXME
+  loader: Loader;
   path: string;
   query: {[key: string]: any};
   params: {[key: string]: any};

@@ -1,7 +1,7 @@
 /* @flow */
 
 import React from 'react';
-import type {DataUpdater, WireObject, RouteComponent} from './app';
+import type {DataUpdater, WireObject, RouteComponent, Loader} from './app';
 import {uriToString} from './util';
 import type {AppController} from './client/controller';
 
@@ -74,6 +74,7 @@ export function createRouteElement(component: RouteComponent, props: {
   controller?: AppController,
   data: WireObject,
   writeData: (updater: DataUpdater) => void,
+  loader: Loader,
 }): React.Element {
   return <ControllerProvider controller={props.controller}>
     {React.createElement(component, props)}

@@ -1,11 +1,11 @@
 /* @flow */
 
 import uuid from 'uuid';
-import type {App, WireObject, PreloadData, Request, RouteHandler, ParsedURI} from '../app';
+import type {App, WireObject, PreloadData, Request, RouteHandler, ParsedURI, Loader} from '../app';
 import {matchRoute} from '../app';
 import type {History, Location} from './history';
 
-let _loader: any; // FIXME
+let _loader: Loader;
 
 export function injectLoader(loader: typeof _loader) {
   _loader = loader;
@@ -52,6 +52,10 @@ export class AppController {
     this.subscribers = [];
     this.started = false;
     this.pending = null;
+  }
+
+  getLoader(): Loader {
+    return _loader;
   }
 
   subscribe(subscriber: AppControllerDelegate) {
