@@ -49,7 +49,17 @@ export function render(app: App, serverRequest: ServerRequest): Promise<RenderRe
 }
 
 function createResult(request: Request, handler: RouteHandler, response: Response, errorStatus?: number) {
-  const data = !isRedirect(response) ? response : {};
+  if (isRedirect(response)) {
+    return {
+      html: '',
+      preloadData: {},
+      title: '',
+      meta: {},
+      redirectURI: ((response: any): Redirect).uri
+    };
+  }
+
+  const data = response;
   const element = createRouteElement(handler.component, {
     data,
     writeData: noOpWriteData,
@@ -62,8 +72,5 @@ function createResult(request: Request, handler: RouteHandler, response: Respons
     title: renderTitle(request.app, handler, data),
     meta: handler.renderMeta ? handler.renderMeta(data) : {},
     errorStatus,
-    redirectURI: isRedirect(response) ?
-      ((response: any): Redirect).uri
-      : undefined,
   };
 }

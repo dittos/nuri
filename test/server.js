@@ -73,7 +73,8 @@ describe('Server', () => {
   it('should redirect', done => {
     const app = createApp();
     app.route('/', {
-      load: ({ redirect }) => redirect('gogo')
+      load: ({ redirect }) => redirect('gogo'),
+      component: () => { assert.fail() },
     });
     // something similar to Express request object
     const serverRequest = {
