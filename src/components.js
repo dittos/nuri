@@ -70,12 +70,18 @@ Link.contextTypes = {
 };
 
 
-export function createRouteElement(component: RouteComponent, props: {
+function Null() {
+  return null;
+}
+
+export function createRouteElement(component?: RouteComponent, props: {
   controller?: AppController,
   data: WireObject,
   writeData: (updater: DataUpdater) => void,
   loader: Loader,
 }): React.Element {
+  if (!component)
+    return <Null />;
   return <ControllerProvider controller={props.controller}>
     {React.createElement(component, props)}
   </ControllerProvider>;

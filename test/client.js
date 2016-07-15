@@ -10,12 +10,16 @@ import {
 
 function noOp() {}
 
-function eventRecorder(callback) {
+function eventRecorder(callback, testDone) {
   const events = [];
 
   function record(event) {
     events.push(event);
-    callback(event);
+    try {
+      callback(event);
+    } catch (e) {
+      testDone(e);
+    }
   }
 
   return {
@@ -31,27 +35,19 @@ function eventRecorder(callback) {
 }
 
 describe('AppController', () => {
-  let currentPath = '/posts/1234';
-  let currentToken;
+  let currentLocation;
   let env;
   let controller;
   let handler;
   let load;
 
   beforeEach(() => {
-    currentToken = null;
+    currentLocation = {path: '/posts/1234', query: {}, token: null};
     env = {
-      getLocation: () => ({
-        path: currentPath,
-        query: {},
-        token: currentToken,
-      }),
-      setHistoryToken: (token) => { currentToken = token },
+      getLocation: () => currentLocation,
+      setHistoryToken: (token) => { currentLocation.token = token },
       setLocationChangeListener: noOp,
-      pushLocation: (path, token) => {
-        currentPath = path;
-        currentToken = token;
-      },
+      pushLocation: location => { currentLocation = location },
     };
     const app = createApp();
     handler = {
@@ -63,6 +59,11 @@ describe('AppController', () => {
       }
     };
     app.route('/posts/:id', handler);
+    app.route('/redirect', {
+      load({ redirect }) {
+        return redirect('/posts/1');
+      }
+    });
     controller = new AppController(app, env);
   });
 
@@ -73,10 +74,10 @@ describe('AppController', () => {
         const state = controller.state;
         assert.equal(state.handler, handler);
         assert.equal(state.data.fromLoader, true);
-        assert.ok(currentToken);
+        assert.ok(currentLocation.token);
         done();
       }
-    });
+    }, done);
     controller.subscribe(r.delegate);
     controller.start();
   });
@@ -88,27 +89,27 @@ describe('AppController', () => {
         const state = controller.state;
         assert.equal(state.handler, handler);
         assert.equal(state.data.fromLoader, false);
-        assert.ok(currentToken);
+        assert.ok(currentLocation.token);
         done();
       }
-    });
+    }, done);
     controller.subscribe(r.delegate);
     const preloadData = {id: '1234', fromLoader: false};
     controller.start(preloadData);
   });
 
   it('should ignore preload data when history token is set', done => {
-    currentToken = 'token';
+    currentLocation.token = 'token';
     const r = eventRecorder(event => {
       if (event === 'didCommitState') {
         assert.deepEqual(r.events, ['willLoad', 'didLoad', 'didCommitState']);
         const state = controller.state;
         assert.equal(state.handler, handler);
         assert.equal(state.data.fromLoader, true);
-        assert.ok(currentToken);
+        assert.ok(currentLocation.token);
         done();
       }
-    });
+    }, done);
     controller.subscribe(r.delegate);
     const preloadData = {id: '1234', fromLoader: false};
     controller.start(preloadData);
@@ -128,10 +129,31 @@ describe('AppController', () => {
         ]);
         done();
       }
-    });
+    }, done);
     controller.subscribe(r.delegate);
     controller.start();
     controller.load({path: '/posts/4567'});
     controller.load({path: '/posts/9999'});
+  });
+
+  it('should redirect', done => {
+    const r = eventRecorder(event => {
+      if (event === 'didCommitState') {
+        assert.deepEqual(r.events, [
+          'willLoad',
+          'didAbortLoad',
+          'willLoad',
+          'didLoad',
+          'willLoad',
+          'didLoad',
+          'didCommitState'
+        ]);
+        assert.equal(currentLocation.path, '/posts/1');
+        done();
+      }
+    }, done);
+    controller.subscribe(r.delegate);
+    controller.start();
+    controller.load({path: '/redirect'});
   });
 });

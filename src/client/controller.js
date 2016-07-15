@@ -1,9 +1,10 @@
 /* @flow */
 
 import uuid from 'uuid';
-import type {App, WireObject, PreloadData, Request, RouteHandler, ParsedURI, Loader} from '../app';
-import {matchRoute} from '../app';
+import type {App, WireObject, PreloadData, Request, RouteHandler, ParsedURI, Loader, Redirect} from '../app';
+import {matchRoute, createRequest, isRedirect} from '../app';
 import type {History, Location} from './history';
+import {parseURI} from '../util';
 
 let _loader: Loader;
 
@@ -135,23 +136,30 @@ export class AppController {
 
     const location = pending.location;
     const {handler, params} = this._matchRoute(location);
-    const request = {
+    const request = createRequest({
       app: this.app,
       loader: _loader,
       path: location.path,
       query: location.query,
       params,
-    };
+    });
 
     this._notifyDelegate('willLoad');
     const loadPromise = handler.load ?
       handler.load(request)
       : Promise.resolve({});
-    loadPromise.then(data => {
+    loadPromise.then(response => {
       if (pending.aborted)
         return;
 
       this._notifyDelegate('didLoad');
+
+      if (isRedirect(response)) {
+        this._redirect(((response: any): Redirect).uri);
+        return;
+      }
+
+      const data = response;
       this._commitPending({
         handler,
         data,
@@ -181,6 +189,22 @@ export class AppController {
       this.history.pushLocation({ ...location, token });
     }
     this._notifyDelegate('didCommitState');
+  }
+
+  _redirect(uri: string) {
+    const pending = this.pending;
+    if (!pending)
+      throw new Error('Unexpected state');
+
+    this.pending = {
+      location:{
+        ...parseURI(uri),
+        token: generateToken(),
+      },
+      action: pending.action || 'push',
+      aborted: false,
+    };
+    this._load();
   }
 
   _notifyDelegate(method: $Keys<AppControllerDelegate>) {

@@ -2,8 +2,8 @@
 
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import type {App, Request, Wire, WireObject, PreloadData, RouteHandler, DataUpdater, Loader} from './app';
-import {matchRoute, renderTitle} from './app';
+import type {App, Request, Response, Redirect, WireObject, PreloadData, RouteHandler, DataUpdater, Loader} from './app';
+import {matchRoute, renderTitle, createRequest, isRedirect} from './app';
 import {createRouteElement} from './components';
 
 type ServerRequest = {
@@ -12,11 +12,12 @@ type ServerRequest = {
 };
 
 type RenderResult = {
-  status: number;
   html: string;
   preloadData: PreloadData;
   title: string;
   meta: WireObject;
+  errorStatus?: number;
+  redirectURI?: string;
 };
 
 let _loaderFactory: (serverRequest: ServerRequest) => Loader;
@@ -29,25 +30,26 @@ function noOpWriteData(updater: DataUpdater) {}
 
 export function render(app: App, serverRequest: ServerRequest): Promise<RenderResult> {
   const {handler, params} = matchRoute(app, serverRequest);
-  const request = {
+  const request = createRequest({
     app,
     loader: _loaderFactory(serverRequest),
     path: serverRequest.path,
     query: serverRequest.query,
     params,
-  };
+  });
   const loadPromise = handler.load ?
     handler.load(request)
     : Promise.resolve({});
   return loadPromise.then(
-    data => createResult(request, 200, handler, data),
+    response => createResult(request, handler, response),
     err => err.status ?
-      createResult(request, err.status, handler, {})
+      createResult(request, handler, {}, err.status)
       : Promise.reject(err)
   );
 }
 
-function createResult(request: Request, status: number, handler: RouteHandler, data: WireObject) {
+function createResult(request: Request, handler: RouteHandler, response: Response, errorStatus?: number) {
+  const data = !isRedirect(response) ? response : {};
   const element = createRouteElement(handler.component, {
     data,
     writeData: noOpWriteData,
@@ -55,10 +57,13 @@ function createResult(request: Request, status: number, handler: RouteHandler, d
   });
   const html = ReactDOMServer.renderToString(element);
   return {
-    status,
     html,
     preloadData: data,
     title: renderTitle(request.app, handler, data),
     meta: handler.renderMeta ? handler.renderMeta(data) : {},
+    errorStatus,
+    redirectURI: isRedirect(response) ?
+      ((response: any): Redirect).uri
+      : undefined,
   };
 }

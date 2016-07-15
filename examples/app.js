@@ -48,4 +48,10 @@ app.route('/posts/:id', {
   }
 });
 
+app.route('/:id', {
+  load(request) {
+    return request.redirect(`/posts/${request.params.id}`);
+  }
+});
+
 export default app;

@@ -41,7 +41,6 @@ describe('Server', () => {
     app.route('/posts/:id', handler);
 
     render(app, serverRequest).then(result => {
-      assert.equal(result.status, 200);
       assert.equal(result.html.replace(/data-react-checksum=".+"/g, 'CHECKSUM'),
         '<div data-reactroot="" data-reactid="1" CHECKSUM>Hello!</div>');
       assert.deepEqual(result.preloadData, {
@@ -50,6 +49,8 @@ describe('Server', () => {
       });
       assert.equal(result.title, 'Hello!');
       assert.deepEqual(result.meta, {description: 'Hello!'});
+      assert.ok(!result.errorStatus);
+      assert.ok(!result.redirectURI);
       done();
     }).catch(done);
   });
@@ -63,8 +64,26 @@ describe('Server', () => {
     };
 
     render(app, serverRequest).then(result => {
-      assert.equal(result.status, 404);
+      assert.equal(result.errorStatus, 404);
       assert.ok(result.html);
+      done();
+    }).catch(done);
+  });
+
+  it('should redirect', done => {
+    const app = createApp();
+    app.route('/', {
+      load: ({ redirect }) => redirect('gogo')
+    });
+    // something similar to Express request object
+    const serverRequest = {
+      path: '/',
+      query: {}
+    };
+
+    render(app, serverRequest).then(result => {
+      assert.ok(!result.errorStatus);
+      assert.equal(result.redirectURI, 'gogo');
       done();
     }).catch(done);
   });

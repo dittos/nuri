@@ -15,6 +15,11 @@ injectLoaderFactory(serverRequest => {
 function h(s) { return s; }
 
 function sendResponse(res, result) {
+  if (result.errorStatus)
+    res.status(result.errorStatus);
+  if (result.redirectURI)
+    res.redirect(result.redirectURI);
+
   res.end(`<!DOCTYPE html>
 <html>
   <head>

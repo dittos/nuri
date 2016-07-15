@@ -17,9 +17,11 @@ export type WireArray = Array<Wire>;
 
 export type RouteComponent = ReactClass<any>;
 
+export type Response = WireObject | Redirect;
+
 export type RouteHandler = {
-  component: RouteComponent;
-  load?: (request: Request) => Promise<WireObject>;
+  component?: RouteComponent;
+  load?: (request: Request) => Promise<Response>;
   renderTitle?: (data: WireObject) => string;
   renderMeta?: (data: WireObject) => WireObject;
 };
@@ -36,13 +38,40 @@ export type RouteMatch = {
 
 export type Loader = any; // FIXME
 
-export type Request = {
+export class Redirect {
+  uri: string;
+
+  constructor(uri: string) {
+    this.uri = uri;
+  }
+};
+
+function redirect(uri: string): Promise<Redirect> {
+  return Promise.resolve(new Redirect(uri));
+}
+
+export function isRedirect(obj: any): boolean {
+  return obj instanceof Redirect;
+}
+
+export type BaseRequest = {
   app: App;
   loader: Loader;
   path: string;
   query: {[key: string]: any};
   params: {[key: string]: any};
 };
+
+export type Request = BaseRequest & {
+  redirect: (uri: string) => Promise<Redirect>;
+};
+
+export function createRequest(base: BaseRequest): Request {
+  return {
+    ...base,
+    redirect,
+  };
+}
 
 export type PreloadData = WireObject;
 
