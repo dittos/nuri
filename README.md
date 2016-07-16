@@ -99,3 +99,64 @@ render(app, serverRequest).then(result => {
   // Use any templating engine you like. Or just concat strings.
 });
 ```
+
+For the full working code, see the [examples/](https://github.com/dittos/nuri/tree/master/examples) directory.
+
+## State management
+
+Nuri has a simple built-in state management system, so you don't need to use React state or Redux/Flux store.
+
+You can mutate the `data` prop by calling `writeData` function provided to the handler component.
+
+```
+class Posts extends React.Component {
+  render() {
+    return <ul>
+      {this.props.data.posts.map(post => <li>{post.title}</li>)}
+      <li><button onClick={this._addPost.bind(this)}>Add Post</button></li>
+    </ul>
+  },
+  
+  _addPost() {
+    this.props.writeData(data => {
+      // You can *mutate* the data
+      data.posts.push({ title: new Date().toString() });
+    });
+    // The component is re-rendered with the changed data.
+  }
+}
+```
+
+An extra benefit of using built-in state system is that the data is tied to the current location. If you visit other page after changing the data, and press the back button then the previous changed state is restored.
+
+## Navigating around
+
+You should use Nuri's API to move into other routes without page refresh.
+
+### Using `Link` component
+
+`Link` components is basically HTML `<a>` tag with click handler attached.
+
+```
+import {Link} from 'nuri';
+
+// `/path/to/route?a=b`
+<Link
+  to={"/path/to/route"}
+  queryParams={{a: 'b'}}
+  className={"link" /* props are passed through to the <a> element */}
+>
+  Link Text
+</Link>
+```
+
+### Programatically navigate
+
+Use the `controller` prop.
+
+```
+this.props.controller.load({
+  path: '/path/to/route',
+  query: {a: 'b'},
+});
+```
