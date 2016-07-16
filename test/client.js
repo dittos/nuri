@@ -48,6 +48,7 @@ describe('AppController', () => {
       setHistoryToken: (token) => { currentLocation.token = token },
       setLocationChangeListener: noOp,
       pushLocation: location => { currentLocation = location },
+      doesPushLocationRefreshPage: () => false,
     };
     const app = createApp();
     handler = {

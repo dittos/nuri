@@ -92,6 +92,10 @@ export class AppController {
   }
 
   load(uri: ParsedURI) {
+    if (this.history.doesPushLocationRefreshPage()) {
+      this.history.pushLocation({ ...uri, token: null });
+      return;
+    }
     this._setPending({ ...uri, token: generateToken() }, 'push');
     this._load();
   }

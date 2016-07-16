@@ -6,12 +6,12 @@ import {
   AppController,
 } from './controller';
 import {AppView} from './view';
-import {BrowserHistory} from './history';
+import {createHistory} from './history';
 
 export {injectLoader} from './controller';
 
 export function render(app: App, container: Node, preloadData?: PreloadData): AppController {
-  const history = new BrowserHistory();
+  const history = createHistory();
   const controller = new AppController(app, history);
   const view = new AppView(controller, container);
   controller.subscribe({

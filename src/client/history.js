@@ -13,9 +13,15 @@ export interface History {
   setHistoryToken(token: string): void;
   setLocationChangeListener(listener: (location: Location) => void): void;
   pushLocation(location: Location): void;
+  doesPushLocationRefreshPage(): boolean;
 }
 
-// TODO: detect pushState support
+export function createHistory(): History {
+  if (supportsHistory())
+    return new BrowserHistory();
+  else
+    return new FallbackHistory();
+}
 
 export class BrowserHistory {
   locationChangeListener: ?(location: Location) => void;
@@ -54,4 +60,54 @@ export class BrowserHistory {
   pushLocation(location: Location) {
     history.pushState({ token: location.token }, '', uriToString(location));
   }
+
+  doesPushLocationRefreshPage(): boolean {
+    return false;
+  }
+}
+
+export class FallbackHistory {
+  getLocation() {
+    return {
+      path: location.pathname,
+      query: querystring.parse(location.search.substring(1)),
+      token: null,
+    };
+  }
+
+  setHistoryToken(token: string) {
+    // ignored
+  }
+
+  setLocationChangeListener(listener: (location: Location) => void) {
+    // ignored
+  }
+
+  pushLocation(location: Location) {
+    window.location.href = uriToString(location);
+  }
+
+  doesPushLocationRefreshPage(): boolean {
+    return true;
+  }
+}
+
+/**
+ * Returns true if the HTML5 history API is supported. Taken from Modernizr.
+ *
+ * https://github.com/Modernizr/Modernizr/blob/master/LICENSE
+ * https://github.com/Modernizr/Modernizr/blob/master/feature-detects/history.js
+ * changed to avoid false negatives for Windows Phones: https://github.com/reactjs/react-router/issues/586
+ */
+function supportsHistory() {
+  const ua = window.navigator.userAgent;
+
+  if ((ua.indexOf('Android 2.') !== -1 || ua.indexOf('Android 4.0') !== -1) &&
+    ua.indexOf('Mobile Safari') !== -1 &&
+    ua.indexOf('Chrome') === -1 &&
+    ua.indexOf('Windows Phone') === -1
+  )
+    return false;
+
+  return window.history && 'pushState' in window.history;
 }
