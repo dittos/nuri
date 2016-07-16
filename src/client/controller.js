@@ -101,14 +101,10 @@ export class AppController {
   }
 
   _onLocationChange(location: Location) {
-    const token = location.token;
-    if (!token) {
-      // TODO
-      throw new Error('Unexpected state');
-    }
-
     this._setPending(location);
-    const cachedState = this.cache[token];
+
+    const token = location.token;
+    const cachedState = token && this.cache[token];
     if (cachedState) {
       this._commitPending(cachedState);
     } else {
