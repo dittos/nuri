@@ -23,11 +23,13 @@ export class BrowserHistory {
   constructor() {
     this.locationChangeListener = null;
     window.addEventListener('popstate', event => {
-      // TODO: normalize difference between browsers
+      // Ignore extraneous popstate events in WebKit
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
-      const listener = this.locationChangeListener;
-      if (listener) {
-        listener(this.getLocation());
+      if (event.state !== undefined) {
+        const listener = this.locationChangeListener;
+        if (listener) {
+          listener(this.getLocation());
+        }
       }
     }, false);
   }
