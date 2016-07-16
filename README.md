@@ -108,7 +108,7 @@ Nuri has a simple built-in state management system, so you don't need to use Rea
 
 You can mutate the `data` prop by calling `writeData` function provided to the handler component.
 
-```
+```js
 class Posts extends React.Component {
   render() {
     return <ul>
@@ -135,9 +135,9 @@ You should use Nuri's API to move into other routes without page refresh.
 
 ### Using `Link` component
 
-`Link` components is basically HTML `<a>` tag with click handler attached.
+`Link` component is basically HTML `<a>` tag with click handler attached.
 
-```
+```js
 import {Link} from 'nuri';
 
 // `/path/to/route?a=b`
@@ -154,7 +154,7 @@ import {Link} from 'nuri';
 
 Use the `controller` prop.
 
-```
+```js
 this.props.controller.load({
   path: '/path/to/route',
   query: {a: 'b'},
