@@ -12,12 +12,12 @@ type ServerRequest = {
 };
 
 type RenderResult = {
-  html: string;
   preloadData: PreloadData;
   title: string;
   meta: WireObject;
   errorStatus?: number;
   redirectURI?: string;
+  getHTML(): string;
 };
 
 let _loaderFactory: (serverRequest: ServerRequest) => Loader;
@@ -51,26 +51,27 @@ export function render(app: App, serverRequest: ServerRequest): Promise<RenderRe
 function createResult(request: Request, handler: RouteHandler, response: Response, errorStatus?: number) {
   if (isRedirect(response)) {
     return {
-      html: '',
       preloadData: {},
       title: '',
       meta: {},
-      redirectURI: ((response: any): Redirect).uri
+      redirectURI: ((response: any): Redirect).uri,
+      getHTML: () => '',
     };
   }
 
   const data = response;
-  const element = createRouteElement(handler.component, {
-    data,
-    writeData: noOpWriteData,
-    loader: request.loader,
-  });
-  const html = ReactDOMServer.renderToString(element);
   return {
-    html,
     preloadData: data,
     title: renderTitle(request.app, handler, data),
     meta: handler.renderMeta ? handler.renderMeta(data) : {},
     errorStatus,
+    getHTML() {
+      const element = createRouteElement(handler.component, {
+        data,
+        writeData: noOpWriteData,
+        loader: request.loader,
+      });
+      return ReactDOMServer.renderToString(element);
+    }
   };
 }
