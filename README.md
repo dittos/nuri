@@ -90,7 +90,7 @@ var serverRequest = {
 
 render(app, serverRequest).then(result => {
   // `result` contains several properties:
-  // - html: prerendered HTML markup
+  // - getHTML(): prerenders HTML markup (not done eagerly because it's fairly expensive)
   // - preloadData: fetched data from `load` hook
   // - title: document title from `renderTitle` hook
   // - meta: arbitary metadata from `renderMeta` hook (useful for SEO!)
