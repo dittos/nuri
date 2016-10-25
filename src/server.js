@@ -17,6 +17,7 @@ type RenderResult = {
   meta: WireObject;
   errorStatus?: number;
   redirectURI?: string;
+  element?: React.Element;
   getHTML(): string;
 };
 
@@ -60,17 +61,18 @@ function createResult(request: Request, handler: RouteHandler, response: Respons
   }
 
   const data = response;
+  const element = createRouteElement(handler.component, {
+    data,
+    writeData: noOpWriteData,
+    loader: request.loader,
+  });
   return {
     preloadData: data,
     title: renderTitle(request.app, handler, data),
     meta: handler.renderMeta ? handler.renderMeta(data) : {},
     errorStatus,
+    element,
     getHTML() {
-      const element = createRouteElement(handler.component, {
-        data,
-        writeData: noOpWriteData,
-        loader: request.loader,
-      });
       return ReactDOMServer.renderToString(element);
     }
   };
