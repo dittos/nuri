@@ -17,7 +17,7 @@ type RenderResult = {
   meta: WireObject;
   errorStatus?: number;
   redirectURI?: string;
-  element?: React.Element;
+  element?: React.Element<any>;
   getHTML(): string;
 };
 

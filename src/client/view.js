@@ -18,10 +18,13 @@ export class AppView {
     this.state = null;
 
     window.addEventListener('scroll', () => {
-      this._onScrollChange(
-        window.pageXOffset || document.documentElement.scrollLeft,
-        window.pageYOffset || document.documentElement.scrollTop
-      );
+      const docEl = document.documentElement;
+      if (docEl) {
+        this._onScrollChange(
+          window.pageXOffset || docEl.scrollLeft,
+          window.pageYOffset || docEl.scrollTop
+        );
+      }
     }, false);
   }
 

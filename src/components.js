@@ -79,7 +79,7 @@ export function createRouteElement(component?: RouteComponent, props: {
   data: WireObject,
   writeData: (updater: DataUpdater) => void,
   loader: Loader,
-}): React.Element {
+}): React.Element<any> {
   if (!component)
     return <Null />;
   return <ControllerProvider controller={props.controller}>

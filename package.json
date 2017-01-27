@@ -6,7 +6,8 @@
   "scripts": {
     "test": "mocha --compilers js:babel-register",
     "start": "webpack --context examples/ --config examples/webpack.config.js && babel-node examples/server.js",
-    "build": "babel -d ./ src/"
+    "build": "babel -d ./ src/",
+    "flow": "flow; test $? -eq 0 -o $? -eq 2"
   },
   "keywords": [],
   "author": "Taeho Kim",
@@ -21,9 +22,9 @@
     "babel-preset-react": "^6.5.0",
     "babel-register": "^6.9.0",
     "express": "^4.13.4",
-    "flow-bin": "^0.27.0",
+    "flow-bin": "^0.38.0",
     "isomorphic-fetch": "^2.2.1",
-    "mocha": "^2.5.3",
+    "mocha": "^3.2.0",
     "react": "^15.1.0",
     "react-dom": "^15.1.0",
     "sinon": "^1.17.4",
@@ -32,6 +33,6 @@
   "dependencies": {
     "lodash": "^4.13.1",
     "path-to-regexp": "^1.5.0",
-    "uuid": "^2.0.2"
+    "uuid": "^3.0.1"
   }
 }
