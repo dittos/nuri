@@ -39,7 +39,7 @@ export class AppView {
       return;
     }
 
-    const {handler, data, scrollX, scrollY} = state;
+    const {handler, data, scrollX = 0, scrollY = 0} = state;
     document.title = renderTitle(this.controller.app, handler, data);
     const element = createRouteElement(handler.component, {
       controller: this.controller,

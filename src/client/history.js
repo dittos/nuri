@@ -1,17 +1,23 @@
 /* @flow */
 
 import querystring from 'querystring';
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/observable/fromEvent';
+import 'rxjs/add/observable/never';
+import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/map';
 import type {ParsedURI} from '../app';
 import {uriToString} from '../util';
 
 export type Location = ParsedURI & {
   token: ?string;
+  isRedirect?: boolean;
 };
 
 export interface History {
   getLocation(): Location;
   setHistoryToken(token: string): void;
-  setLocationChangeListener(listener: (location: Location) => void): void;
+  locationChanges(): Observable<Location>;
   pushLocation(location: Location): void;
   doesPushLocationRefreshPage(): boolean;
 }
@@ -24,20 +30,12 @@ export function createHistory(): History {
 }
 
 export class BrowserHistory {
-  locationChangeListener: ?(location: Location) => void;
-
-  constructor() {
-    this.locationChangeListener = null;
-    window.addEventListener('popstate', event => {
+  locationChanges() {
+    return Observable.fromEvent(window, 'popstate')
       // Ignore extraneous popstate events in WebKit
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
-      if (event.state !== undefined) {
-        const listener = this.locationChangeListener;
-        if (listener) {
-          listener(this.getLocation());
-        }
-      }
-    }, false);
+      .filter(event => event.state !== undefined)
+      .map(() => this.getLocation());
   }
 
   getLocation() {
@@ -51,10 +49,6 @@ export class BrowserHistory {
   setHistoryToken(token: string) {
     const path = location.pathname + location.search;
     history.replaceState({ token }, '', path);
-  }
-
-  setLocationChangeListener(listener: (location: Location) => void) {
-    this.locationChangeListener = listener;
   }
 
   pushLocation(location: Location) {
@@ -79,8 +73,8 @@ export class FallbackHistory {
     // ignored
   }
 
-  setLocationChangeListener(listener: (location: Location) => void) {
-    // ignored
+  locationChanges() {
+    return Observable.never();
   }
 
   pushLocation(location: Location) {

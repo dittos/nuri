@@ -1,6 +1,8 @@
 import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
 import sinon from 'sinon';
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/observable/never';
 import {
   createApp,
 } from '../src/app';
@@ -46,7 +48,7 @@ describe('AppController', () => {
     env = {
       getLocation: () => currentLocation,
       setHistoryToken: (token) => { currentLocation.token = token },
-      setLocationChangeListener: noOp,
+      locationChanges: () => Observable.never(),
       pushLocation: location => { currentLocation = location },
       doesPushLocationRefreshPage: () => false,
     };
@@ -143,8 +145,6 @@ describe('AppController', () => {
         assert.deepEqual(r.events, [
           'willLoad',
           'didAbortLoad',
-          'willLoad',
-          'didLoad',
           'willLoad',
           'didLoad',
           'didCommitState'
