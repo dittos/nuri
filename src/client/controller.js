@@ -12,12 +12,6 @@ import {matchRoute, createRequest, isRedirect} from '../app';
 import type {History, Location} from './history';
 import {parseURI} from '../util';
 
-let _loader: Loader;
-
-export function injectLoader(loader: typeof _loader) {
-  _loader = loader;
-}
-
 export type AppState = {|
   location: Location;
   handler: RouteHandler;
@@ -41,15 +35,17 @@ function noOp() {}
 export class AppController {
   app: App;
   history: History;
+  loader: Loader;
   cache: {[token: string]: AppState};
   state: ?AppState;
   subject: Subject<$Keys<AppControllerDelegate>>;
   started: boolean;
   loadSubscription: Subscription;
 
-  constructor(app: App, history: History) {
+  constructor(app: App, history: History, loader: Loader) {
     this.app = app;
     this.history = history;
+    this.loader = loader;
     this.cache = {};
     this.state = null;
     this.subject = new Subject();
@@ -59,7 +55,7 @@ export class AppController {
   }
 
   getLoader(): Loader {
-    return _loader;
+    return this.loader;
   }
 
   subscribe(subscriber: AppControllerDelegate): Subscription {
@@ -149,7 +145,7 @@ export class AppController {
     }
     const request = createRequest({
       app: this.app,
-      loader: _loader,
+      loader: this.loader,
       path: location.path,
       query: location.query,
       params,

@@ -1,18 +1,19 @@
 /* @flow */
 
-import type {App, PreloadData} from '../app';
-import {
-  injectLoader,
-  AppController,
-} from './controller';
+import type {App, PreloadData, Loader} from '../app';
+import {AppController} from './controller';
 import {AppView} from './view';
 import {createHistory} from './history';
 
-export {injectLoader} from './controller';
+let _loader: Loader;
+
+export function injectLoader(loader: typeof _loader) {
+  _loader = loader;
+}
 
 export function render(app: App, container: Node, preloadData?: PreloadData): AppController {
   const history = createHistory();
-  const controller = new AppController(app, history);
+  const controller = new AppController(app, history, _loader);
   const view = new AppView(controller, container);
   controller.subscribe({
     willLoad() {},
