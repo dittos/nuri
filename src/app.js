@@ -1,6 +1,5 @@
 /* @flow */
 
-import React from 'react';
 import pathToRegexp from 'path-to-regexp';
 import isFunction from 'lodash/isFunction';
 
@@ -44,7 +43,7 @@ export class Redirect {
   constructor(uri: string) {
     this.uri = uri;
   }
-};
+}
 
 function redirect(uri: string): Promise<Redirect> {
   return Promise.resolve(new Redirect(uri));

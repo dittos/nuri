@@ -27,6 +27,7 @@ export function injectLoaderFactory(loaderFactory: typeof _loaderFactory) {
   _loaderFactory = loaderFactory;
 }
 
+// eslint-disable-next-line no-unused-vars
 function noOpWriteData(updater: DataUpdater) {}
 
 export function render(app: App, serverRequest: ServerRequest): Promise<RenderResult> {

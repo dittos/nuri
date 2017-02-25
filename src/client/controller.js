@@ -1,191 +1,161 @@
 /* @flow */
 
-import uuid from 'uuid';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/defer';
 import 'rxjs/add/observable/of';
-import 'rxjs/add/operator/switchMap';
-import {Subject} from 'rxjs/Subject';
-import {Subscription} from 'rxjs/Subscription';
-import type {App, WireObject, PreloadData, Request, RouteHandler, ParsedURI, Loader, Redirect, Response} from '../app';
+import 'rxjs/add/operator/map';
 import {matchRoute, createRequest, isRedirect} from '../app';
-import type {History, Location} from './history';
-import {parseURI} from '../util';
+import type {App, PreloadData, Loader, Redirect, WireObject, RouteHandler, ParsedURI} from '../app';
+import {NavigationController} from './navigation';
+import type {NavigationType, NavigationEntry, LoadResult} from './navigation';
+import type {History} from './history';
+
+let _loader: Loader;
+
+export function injectLoader(loader: typeof _loader) {
+  _loader = loader;
+}
 
 export type AppState = {|
-  location: Location;
   handler: RouteHandler;
   data: WireObject;
   scrollX?: number;
   scrollY?: number;
 |};
 
-export interface AppControllerDelegate {
+interface AppControllerDelegate {
   willLoad(): void;
   didLoad(): void;
   didAbortLoad(): void;
-  didCommitState(): void;
-};
-
-type TokenAction = 'replace' | 'push' | 'pop';
-
-const generateToken = uuid.v4;
-function noOp() {}
+  didCommitState(state: AppState): void;
+}
 
 export class AppController {
   app: App;
-  history: History;
-  loader: Loader;
-  cache: {[token: string]: AppState};
-  state: ?AppState;
-  subject: Subject<$Keys<AppControllerDelegate>>;
-  started: boolean;
-  loadSubscription: Subscription;
+  _priv: AppControllerPrivate;
 
-  constructor(app: App, history: History, loader: Loader) {
+  constructor(app: App, history: History) {
     this.app = app;
-    this.history = history;
-    this.loader = loader;
-    this.cache = {};
-    this.state = null;
-    this.subject = new Subject();
-    this.started = false;
-    // Subscription.EMPTY is missing in flow-typed
-    this.loadSubscription = (Subscription: any).EMPTY;
-  }
-
-  getLoader(): Loader {
-    return this.loader;
-  }
-
-  subscribe(subscriber: AppControllerDelegate): Subscription {
-    return this.subject.subscribe(method => {
-      const fn = (subscriber: any)[method];
-      if (fn)
-        fn.apply(null);
-    });
+    this._priv = new AppControllerPrivate(app, history);
   }
 
   start(preloadData?: PreloadData) {
-    if (this.started)
-      return;
-
-    this.started = true;
-    this.history.locationChanges().subscribe(this._onLocationChange.bind(this));
-
-    const location = this.history.getLocation();
-    const shouldUsePreloadData = !location.token;
-    location.token = generateToken();
-    if (shouldUsePreloadData && preloadData) {
-      const matchedRequest = this._matchRoute(location);
-      this._commitState('replace', {
-        location,
-        handler: matchedRequest.handler,
-        data: preloadData,
-      });
-    } else {
-      this._handleAction('replace', location);
-    }
+    this._priv.start(preloadData);
   }
 
   load(uri: ParsedURI) {
-    if (this.history.doesPushLocationRefreshPage()) {
-      this.history.pushLocation({ ...uri, token: null });
-      return;
-    }
-    this._abortLoad();
-    this._handleAction('push', { ...uri, token: generateToken() });
+    this._priv.load(uri);
   }
 
-  _onLocationChange(location: Location) {
-    this._abortLoad();
+  subscribe(delegate: AppControllerDelegate) {
+    this._priv.subscribe(delegate);
+  }
 
-    const token = location.token;
-    const cachedState = token && this.cache[token];
-    if (cachedState) {
-      this._commitState('pop', cachedState);
+  getLoader(): Loader {
+    return _loader;
+  }
+}
+
+class AppControllerPrivate {
+  app: App;
+  _history: History;
+  _navigationController: NavigationController<AppState>;
+  _delegates: AppControllerDelegate[];
+  
+  constructor(app: App, history: History) {
+    this.app = app;
+    this._history = history;
+    this._navigationController = new NavigationController(this);
+    this._delegates = [];
+  }
+
+  start(preloadData?: PreloadData) {
+    this._history.locationChanges().subscribe(location => {
+      this._navigationController.pop(location);
+    });
+
+    const location = this._history.getLocation();
+    let preloadState;
+    if (preloadData) {
+      const matchedRequest = this._matchRoute(location.uri);
+      preloadState = {
+        handler: matchedRequest.handler,
+        data: preloadData,
+      };
+    }
+    this._navigationController.start(location, preloadState);
+  }
+
+  subscribe(delegate: AppControllerDelegate) {
+    this._delegates.push(delegate);
+  }
+
+  willLoad() {
+    this._delegates.forEach(delegate => delegate.willLoad());
+  }
+
+  didLoad() {
+    this._delegates.forEach(delegate => delegate.didLoad());
+  }
+
+  didAbortLoad() {
+    this._delegates.forEach(delegate => delegate.didAbortLoad());
+  }
+
+  didCommitLoad(type: NavigationType, { uri, token, state }: NavigationEntry<AppState>) {
+    switch (type) {
+      case 'replace':
+        this._history.setHistoryToken(token);
+        break;
+      case 'push':
+        this._history.pushLocation({ uri, token });
+        break;
+      case 'pop':
+        // Keep history untouched as the event originates from history
+        break;
+    }
+    this._delegates.forEach(delegate => delegate.didCommitState(state));
+  }
+
+  load(uri: ParsedURI) {
+    if (this._history.doesPushLocationRefreshPage()) {
+      this._history.pushLocation({ uri, token: null });
     } else {
-      this._handleAction('pop', location);
+      this._navigationController.push(uri);
     }
   }
 
-  _matchRoute(location: Location) {
-    return matchRoute(this.app, location);
-  }
-
-  _abortLoad() {
-    if (!this.loadSubscription.closed) {
-      this.loadSubscription.unsubscribe();
-      this.subject.next('didAbortLoad');
-    }
-  }
-
-  _handleAction(action: TokenAction, location: Location) {
-    this.subject.next('willLoad');
-    this.loadSubscription = this._load(location).subscribe(state => {
-      this.subject.next('didLoad');
-      if (state.location.isRedirect && action === 'pop') {
-        // 'pop' does not apply changed uri to address bar
-        // TODO: test this behavior
-        action = 'push';
-      }
-      this._commitState(action, state);
-    }); // TODO: handle onError
-  }
-
-  _load(location: Location): Observable<AppState> {
-    const {handler, params} = this._matchRoute(location);
+  loadState(uri: ParsedURI): Observable<LoadResult<AppState>> {
+    const {handler, params} = this._matchRoute(uri);
     const load = handler.load;
     if (!load) {
       return Observable.of({
-        location,
         handler,
         data: {},
       });
     }
     const request = createRequest({
       app: this.app,
-      loader: this.loader,
-      path: location.path,
-      query: location.query,
+      loader: _loader,
+      path: uri.path,
+      query: uri.query,
       params,
     });
     return Observable.defer(() => load(request))
-      .switchMap(response => {
+      .map(response => {
         if (isRedirect(response)) {
-          const redirectURI = ((response: any): Redirect).uri;
-          return this._load({
-            ...parseURI(redirectURI),
-            token: generateToken(),
-            isRedirect: true,
-          });
+          return ((response: any): Redirect);
         } else {
           const data: WireObject = response;
-          return Observable.of({
-            location,
+          return {
             handler,
             data,
-          });
+          };
         }
       });
   }
 
-  _commitState(action: TokenAction, state: AppState) {
-    const location = state.location;
-    const token = location.token || generateToken();
-    this.state = state;
-    this.cache[token] = state;
-    switch (action) {
-      case 'replace':
-        this.history.setHistoryToken(token);
-        break;
-      case 'push':
-        this.history.pushLocation({ ...location, token });
-        break;
-      case 'pop':
-        // Keep history untouched as the event originates from history
-        break;
-    }
-    this.subject.next('didCommitState');
+  _matchRoute(uri: ParsedURI) {
+    return matchRoute(this.app, uri);
   }
 }

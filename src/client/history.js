@@ -9,10 +9,10 @@ import 'rxjs/add/operator/map';
 import type {ParsedURI} from '../app';
 import {uriToString} from '../util';
 
-export type Location = ParsedURI & {
-  token: ?string;
-  isRedirect?: boolean;
-};
+export type Location = {|
+  uri: ParsedURI;
+  token: string | null;
+|};
 
 export interface History {
   getLocation(): Location;
@@ -40,8 +40,10 @@ export class BrowserHistory {
 
   getLocation() {
     return {
-      path: location.pathname,
-      query: querystring.parse(location.search.substring(1)),
+      uri: {
+        path: location.pathname,
+        query: querystring.parse(location.search.substring(1)),
+      },
       token: history.state && history.state.token,
     };
   }
@@ -51,8 +53,8 @@ export class BrowserHistory {
     history.replaceState({ token }, '', path);
   }
 
-  pushLocation(location: Location) {
-    history.pushState({ token: location.token }, '', uriToString(location));
+  pushLocation({ token, uri }: Location) {
+    history.pushState({ token }, '', uriToString(uri));
   }
 
   doesPushLocationRefreshPage(): boolean {
@@ -63,12 +65,15 @@ export class BrowserHistory {
 export class FallbackHistory {
   getLocation() {
     return {
-      path: location.pathname,
-      query: querystring.parse(location.search.substring(1)),
+      uri: {
+        path: location.pathname,
+        query: querystring.parse(location.search.substring(1)),
+      },
       token: null,
     };
   }
 
+  // eslint-disable-next-line no-unused-vars
   setHistoryToken(token: string) {
     // ignored
   }
@@ -77,8 +82,8 @@ export class FallbackHistory {
     return Observable.never();
   }
 
-  pushLocation(location: Location) {
-    window.location.href = uriToString(location);
+  pushLocation({ uri }: Location) {
+    window.location.href = uriToString(uri);
   }
 
   doesPushLocationRefreshPage(): boolean {

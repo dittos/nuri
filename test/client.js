@@ -1,160 +1,120 @@
 import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
 import sinon from 'sinon';
-import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/observable/never';
+import {Observable} from 'rxjs';
 import {
-  createApp,
+  Redirect,
 } from '../src/app';
 import {
-  AppController,
-} from '../src/client/controller';
+  NavigationController,
+} from '../src/client/navigation';
 
-function noOp() {}
-
-function eventRecorder(callback, testDone) {
-  const events = [];
-
-  function record(event) {
-    events.push(event);
-    try {
-      callback(event);
-    } catch (e) {
-      testDone(e);
-    }
-  }
-
-  return {
-    events,
-
-    delegate: {
-      willLoad() { record('willLoad'); },
-      didLoad() { record('didLoad') },
-      didAbortLoad() { record('didAbortLoad') },
-      didCommitState() { record('didCommitState') },
-    }
-  };
-}
-
-describe('AppController', () => {
-  let currentLocation;
-  let env;
+describe('NavigationController', () => {
+  let events;
+  let delegate;
   let controller;
-  let handler;
-  let load;
 
   beforeEach(() => {
-    currentLocation = {path: '/posts/1234', query: {}, token: null};
-    env = {
-      getLocation: () => currentLocation,
-      setHistoryToken: (token) => { currentLocation.token = token },
-      locationChanges: () => Observable.never(),
-      pushLocation: location => { currentLocation = location },
-      doesPushLocationRefreshPage: () => false,
+    events = [];
+    delegate = {
+      willLoad() { events.push('willLoad'); },
+      didLoad() { events.push('didLoad') },
+      didAbortLoad() { events.push('didAbortLoad') },
     };
-    const app = createApp();
-    handler = {
-      load(request) {
-        return Promise.resolve({
-          id: request.params.id,
-          fromLoader: true
-        });
-      }
-    };
-    app.route('/posts/:id', handler);
-    app.route('/redirect', {
-      load({ redirect }) {
-        return redirect('/posts/1');
-      }
-    });
-    controller = new AppController(app, env);
+    controller = new NavigationController(delegate);
   });
 
   it('should start without preload data', done => {
-    const r = eventRecorder(event => {
-      if (event === 'didCommitState') {
-        assert.deepEqual(r.events, ['willLoad', 'didLoad', 'didCommitState']);
-        const state = controller.state;
-        assert.equal(state.handler, handler);
-        assert.equal(state.data.fromLoader, true);
-        assert.ok(currentLocation.token);
-        done();
-      }
-    }, done);
-    controller.subscribe(r.delegate);
-    controller.start();
+    const initialUri = {path: '/posts/1234', query: {}};
+    delegate.loadState = (uri) => {
+      assert.deepEqual(uri, initialUri);
+      return Observable.defer(() => Promise.resolve('blah'));
+    };
+    delegate.didCommitLoad = (type, entry) => {
+      assert.equal(type, 'replace');
+      assert.deepEqual(entry.uri, initialUri);
+      assert.ok(entry.token);
+      assert.equal(entry.state, 'blah');
+      assert.deepEqual(events, ['willLoad', 'didLoad']);
+      done();
+    };
+    controller.start({ uri: initialUri, token: null });
   });
 
   it('should start with preload data and no history token', done => {
-    const r = eventRecorder(event => {
-      if (event === 'didCommitState') {
-        assert.deepEqual(r.events, ['didCommitState']);
-        const state = controller.state;
-        assert.equal(state.handler, handler);
-        assert.equal(state.data.fromLoader, false);
-        assert.ok(currentLocation.token);
-        done();
-      }
-    }, done);
-    controller.subscribe(r.delegate);
-    const preloadData = {id: '1234', fromLoader: false};
-    controller.start(preloadData);
+    const initialUri = {path: '/posts/1234', query: {}};
+    delegate.loadState = (uri) => {
+      throw new Error('should not be called');
+    };
+    delegate.didCommitLoad = (type, entry) => {
+      assert.equal(type, 'replace');
+      assert.deepEqual(entry.uri, initialUri);
+      assert.ok(entry.token);
+      assert.equal(entry.state, 'preloadData');
+      assert.deepEqual(events, []);
+      done();
+    };
+    controller.start({ uri: initialUri, token: null }, 'preloadData');
   });
 
   it('should ignore preload data when history token is set', done => {
-    currentLocation.token = 'token';
-    const r = eventRecorder(event => {
-      if (event === 'didCommitState') {
-        assert.deepEqual(r.events, ['willLoad', 'didLoad', 'didCommitState']);
-        const state = controller.state;
-        assert.equal(state.handler, handler);
-        assert.equal(state.data.fromLoader, true);
-        assert.ok(currentLocation.token);
-        done();
-      }
-    }, done);
-    controller.subscribe(r.delegate);
-    const preloadData = {id: '1234', fromLoader: false};
-    controller.start(preloadData);
+    const initialUri = {path: '/posts/1234', query: {}};
+    delegate.loadState = (uri) => {
+      assert.deepEqual(uri, initialUri);
+      return Observable.defer(() => Promise.resolve('blah'));
+    };
+    delegate.didCommitLoad = (type, entry) => {
+      assert.equal(type, 'replace');
+      assert.deepEqual(entry.uri, initialUri);
+      assert.ok(entry.token);
+      assert.notEqual(entry.token, 'token');
+      assert.equal(entry.state, 'blah');
+      assert.deepEqual(events, ['willLoad', 'didLoad']);
+      done();
+    };
+    controller.start({ uri: initialUri, token: 'token' }, 'preloadData');
   });
 
   it('should cancel inflight load', done => {
-    const r = eventRecorder(event => {
-      if (event === 'didCommitState') {
-        assert.deepEqual(r.events, [
-          'willLoad',
-          'didAbortLoad',
-          'willLoad',
-          'didAbortLoad',
-          'willLoad',
-          'didLoad',
-          'didCommitState'
-        ]);
-        done();
-      }
-    }, done);
-    controller.subscribe(r.delegate);
-    controller.start();
-    controller.load({path: '/posts/4567'});
-    controller.load({path: '/posts/9999'});
+    delegate.loadState = (uri) => {
+      return Observable.defer(() => Promise.resolve('blah'));
+    };
+    delegate.didCommitLoad = (type, entry) => {
+      assert.deepEqual(events, [
+        'willLoad',
+        'didAbortLoad',
+        'willLoad',
+        'didAbortLoad',
+        'willLoad',
+        'didLoad',
+      ]);
+      done();
+    };
+    const initialUri = {path: '/posts/1234', query: {}};
+    controller.start({ uri: initialUri, token: null });
+    controller.push({path: '/posts/4567'});
+    controller.push({path: '/posts/9999'});
   });
 
   it('should redirect', done => {
-    const r = eventRecorder(event => {
-      if (event === 'didCommitState') {
-        assert.deepEqual(r.events, [
-          'willLoad',
-          'didAbortLoad',
-          'willLoad',
-          'didLoad',
-          'didCommitState'
-        ]);
-        assert.equal(currentLocation.path, '/posts/1');
-        done();
+    delegate.loadState = (uri) => {
+      if (uri.path === '/redirect') {
+        return Observable.of(new Redirect('/posts/1'));
       }
-    }, done);
-    controller.subscribe(r.delegate);
-    controller.start();
-    controller.load({path: '/redirect'});
+      return Observable.defer(() => Promise.resolve('blah'));
+    };
+    delegate.didCommitLoad = (type, entry) => {
+      assert.deepEqual(events, [
+        'willLoad',
+        'didAbortLoad',
+        'willLoad',
+        'didLoad',
+      ]);
+      assert.equal(entry.uri.path, '/posts/1');
+      done();
+    };
+    const initialUri = {path: '/posts/1234', query: {}};
+    controller.start({ uri: initialUri, token: null });
+    controller.push({path: '/redirect'});
   });
 });

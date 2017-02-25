@@ -1,6 +1,5 @@
 /* @flow */
 
-import React from 'react';
 import ReactDOM from 'react-dom';
 import type {DataUpdater} from '../app';
 import {renderTitle} from '../app';
