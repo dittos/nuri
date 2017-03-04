@@ -29,7 +29,7 @@ export function createHistory(): History {
     return new FallbackHistory();
 }
 
-export class BrowserHistory {
+export class BrowserHistory implements History {
   locationChanges() {
     return Observable.fromEvent(window, 'popstate')
       // Ignore extraneous popstate events in WebKit
@@ -62,7 +62,7 @@ export class BrowserHistory {
   }
 }
 
-export class FallbackHistory {
+export class FallbackHistory implements History {
   getLocation() {
     return {
       uri: {

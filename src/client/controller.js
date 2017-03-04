@@ -7,7 +7,7 @@ import 'rxjs/add/operator/map';
 import {matchRoute, createRequest, isRedirect} from '../app';
 import type {App, PreloadData, Loader, Redirect, WireObject, RouteHandler, ParsedURI} from '../app';
 import {NavigationController} from './navigation';
-import type {NavigationType, NavigationEntry, LoadResult} from './navigation';
+import type {NavigationControllerDelegate, NavigationType, NavigationEntry, LoadResult} from './navigation';
 import type {History} from './history';
 
 let _loader: Loader;
@@ -56,7 +56,7 @@ export class AppController {
   }
 }
 
-class AppControllerPrivate {
+class AppControllerPrivate implements NavigationControllerDelegate<AppState> {
   app: App;
   _history: History;
   _navigationController: NavigationController<AppState>;
