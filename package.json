@@ -6,7 +6,7 @@
   "scripts": {
     "test": "tsc && mocha --compilers js:babel-register",
     "start": "webpack --context examples/ --config examples/webpack.config.js && babel-node examples/server.js",
-    "build": "tsc --outDir .",
+    "build": "tsc --outDir deploy",
     "lint": "tslint 'src/**/*.ts'"
   },
   "keywords": [],
