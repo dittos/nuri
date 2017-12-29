@@ -4,12 +4,12 @@ import {App, Request, Response, Redirect, WireObject, PreloadData, RouteHandler,
 import {matchRoute, renderTitle, createRequest, isRedirect} from './app';
 import {createRouteElement} from './components';
 
-type ServerRequest = {
+export type ServerRequest = {
   path: string;
   query: {[key: string]: string};
 };
 
-type RenderResult = {
+export type RenderResult = {
   preloadData: PreloadData;
   title: string;
   meta: WireObject;
@@ -21,7 +21,7 @@ type RenderResult = {
 
 let _loaderFactory: (serverRequest: ServerRequest) => Loader;
 
-export function injectLoaderFactory(loaderFactory: typeof _loaderFactory) {
+export function injectLoaderFactory(loaderFactory: (serverRequest: ServerRequest) => Loader) {
   _loaderFactory = loaderFactory;
 }
 

@@ -10,7 +10,7 @@ import {History, Location} from './history';
 
 let _loader: Loader;
 
-export function injectLoader(loader: typeof _loader) {
+export function injectLoader(loader: Loader) {
   _loader = loader;
 }
 
@@ -21,7 +21,7 @@ export type AppState = {
   scrollY?: number;
 };
 
-interface AppControllerDelegate {
+export interface AppControllerDelegate {
   willLoad(): void;
   didLoad(): void;
   didAbortLoad(): void;
@@ -30,7 +30,7 @@ interface AppControllerDelegate {
 
 export class AppController {
   app: App;
-  _priv: AppControllerPrivate;
+  private _priv: AppControllerPrivate;
 
   constructor(app: App, history: History) {
     this.app = app;

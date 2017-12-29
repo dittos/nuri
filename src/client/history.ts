@@ -76,8 +76,8 @@ export class FallbackHistory implements History {
     // ignored
   }
 
-  locationChanges() {
-    return Observable.never<Location>();
+  locationChanges(): Observable<Location> {
+    return Observable.never();
   }
 
   pushLocation({ uri }: Location) {
