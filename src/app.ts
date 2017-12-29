@@ -1,20 +1,16 @@
-/* @flow */
-
-import pathToRegexp from 'path-to-regexp';
-import isFunction from 'lodash/isFunction';
+import * as pathToRegexp from 'path-to-regexp';
+import isFunction = require('lodash/isFunction');
 
 export type Route = {
   regexp: RegExp;
-  keys: Array<any>;
+  keys: any[];
   handler: RouteHandler;
 };
 
 // JSON-serializable "wire" types.
-export type Wire = | string | number | boolean | null | WireObject | WireArray;
-export type WireObject = { [key:string]: Wire };
-export type WireArray = Array<Wire>;
+export type WireObject = { [key: string]: any };
 
-export type RouteComponent = ReactClass<any>;
+export type RouteComponent = React.ComponentType<any>;
 
 export type Response = WireObject | Redirect;
 
@@ -83,9 +79,9 @@ const defaultHandler: RouteHandler = {
 };
 
 export class App {
-  routes: Array<Route>;
+  routes: Route[];
   defaultHandler: RouteHandler;
-  title: string | (routeTitle: ?string) => string;
+  title: string | ((routeTitle?: string) => string);
 
   constructor() {
     this.routes = [];

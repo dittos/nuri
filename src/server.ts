@@ -1,8 +1,6 @@
-/* @flow */
-
-import React from 'react';
-import ReactDOMServer from 'react-dom/server';
-import type {App, Request, Response, Redirect, WireObject, PreloadData, RouteHandler, DataUpdater, Loader} from './app';
+import * as React from 'react';
+import * as ReactDOMServer from 'react-dom/server';
+import {App, Request, Response, Redirect, WireObject, PreloadData, RouteHandler, DataUpdater, Loader} from './app';
 import {matchRoute, renderTitle, createRequest, isRedirect} from './app';
 import {createRouteElement} from './components';
 
@@ -17,7 +15,7 @@ type RenderResult = {
   meta: WireObject;
   errorStatus?: number;
   redirectURI?: string;
-  element?: React.Element<any>;
+  element?: React.ReactElement<any>;
   getHTML(): string;
 };
 
@@ -46,7 +44,7 @@ export function render(app: App, serverRequest: ServerRequest): Promise<RenderRe
     response => createResult(request, handler, response),
     err => err.status ?
       createResult(request, handler, {}, err.status)
-      : Promise.reject(err)
+      : Promise.reject<RenderResult>(err)
   );
 }
 
@@ -56,7 +54,7 @@ function createResult(request: Request, handler: RouteHandler, response: Respons
       preloadData: {},
       title: '',
       meta: {},
-      redirectURI: ((response: any): Redirect).uri,
+      redirectURI: (response as Redirect).uri,
       getHTML: () => '',
     };
   }

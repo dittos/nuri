@@ -4,10 +4,10 @@ import sinon from 'sinon';
 import {Observable} from 'rxjs';
 import {
   Redirect,
-} from '../src/app';
+} from '../lib/app';
 import {
   NavigationController,
-} from '../src/client/navigation';
+} from '../lib/client/navigation';
 
 describe('NavigationController', () => {
   let events;

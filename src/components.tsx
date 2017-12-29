@@ -1,11 +1,13 @@
-/* @flow */
-
-import React from 'react';
-import type {DataUpdater, WireObject, RouteComponent, Loader} from './app';
+import * as React from 'react';
+import {DataUpdater, WireObject, RouteComponent, Loader} from './app';
 import {uriToString} from './util';
-import type {AppController} from './client/controller';
+import {AppController} from './client/controller';
 
-export class ControllerProvider extends React.Component {
+export class ControllerProvider extends React.Component<any> {
+  static childContextTypes = {
+    controller: React.PropTypes.object
+  };
+
   render() {
     return React.Children.only(this.props.children);
   }
@@ -14,9 +16,6 @@ export class ControllerProvider extends React.Component {
     return {controller: this.props.controller};
   }
 }
-ControllerProvider.childContextTypes = {
-  controller: React.PropTypes.object
-};
 
 
 function isLeftClickEvent(event) {
@@ -31,7 +30,8 @@ export function Link(props: {
   to: string,
   queryParams?: {[key: string]: any},
   onClick: any,
-}, context: {controller: ?AppController}) {
+  target?: string,
+}, context: {controller?: AppController}) {
   const { to, queryParams = {}, onClick, ...restProps } = props;
   const uri = {
     path: to,
@@ -65,7 +65,7 @@ export function Link(props: {
   return <a {...restProps} href={href} onClick={handleClick} />;
 }
 
-Link.contextTypes = {
+(Link as any).contextTypes = {
   controller: React.PropTypes.object
 };
 
@@ -74,12 +74,12 @@ function Null() {
   return null;
 }
 
-export function createRouteElement(component?: RouteComponent, props: {
+export function createRouteElement(component: RouteComponent | undefined | null, props: {
   controller?: AppController,
   data: WireObject,
   writeData: (updater: DataUpdater) => void,
   loader: Loader,
-}): React.Element<any> {
+}): React.ReactElement<any> {
   if (!component)
     return <Null />;
   return <ControllerProvider controller={props.controller}>

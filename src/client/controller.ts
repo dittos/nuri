@@ -1,14 +1,12 @@
-/* @flow */
-
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/defer';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/map';
 import {matchRoute, createRequest, isRedirect} from '../app';
-import type {App, PreloadData, Loader, Redirect, WireObject, RouteHandler, ParsedURI} from '../app';
+import {App, PreloadData, Loader, Redirect, WireObject, RouteHandler, ParsedURI} from '../app';
 import {NavigationController} from './navigation';
-import type {NavigationControllerDelegate, NavigationType, NavigationEntry, LoadResult} from './navigation';
-import type {History} from './history';
+import {NavigationControllerDelegate, NavigationType, NavigationEntry, LoadResult} from './navigation';
+import {History, Location} from './history';
 
 let _loader: Loader;
 
@@ -16,12 +14,12 @@ export function injectLoader(loader: typeof _loader) {
   _loader = loader;
 }
 
-export type AppState = {|
+export type AppState = {
   handler: RouteHandler;
   data: WireObject;
   scrollX?: number;
   scrollY?: number;
-|};
+};
 
 interface AppControllerDelegate {
   willLoad(): void;
@@ -61,7 +59,7 @@ class AppControllerPrivate implements NavigationControllerDelegate<AppState> {
   _history: History;
   _navigationController: NavigationController<AppState>;
   _delegates: AppControllerDelegate[];
-  
+
   constructor(app: App, history: History) {
     this.app = app;
     this._history = history;
@@ -70,8 +68,8 @@ class AppControllerPrivate implements NavigationControllerDelegate<AppState> {
   }
 
   start(preloadData?: PreloadData) {
-    this._history.locationChanges().subscribe(location => {
-      this._navigationController.pop(location);
+    this._history.locationChanges().subscribe((loc: Location) => {
+      this._navigationController.pop(loc);
     });
 
     const location = this._history.getLocation();
@@ -144,7 +142,7 @@ class AppControllerPrivate implements NavigationControllerDelegate<AppState> {
     return Observable.defer(() => load(request))
       .map(response => {
         if (isRedirect(response)) {
-          return ((response: any): Redirect);
+          return response as Redirect;
         } else {
           const data: WireObject = response;
           return {

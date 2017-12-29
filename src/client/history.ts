@@ -1,18 +1,16 @@
-/* @flow */
-
-import querystring from 'querystring';
+import * as querystring from 'querystring';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/fromEvent';
 import 'rxjs/add/observable/never';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
-import type {ParsedURI} from '../app';
+import {ParsedURI} from '../app';
 import {uriToString} from '../util';
 
-export type Location = {|
+export type Location = {
   uri: ParsedURI;
   token: string | null;
-|};
+};
 
 export interface History {
   getLocation(): Location;
@@ -34,7 +32,7 @@ export class BrowserHistory implements History {
     return Observable.fromEvent(window, 'popstate')
       // Ignore extraneous popstate events in WebKit
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
-      .filter(event => event.state !== undefined)
+      .filter((event: PopStateEvent) => event.state !== undefined)
       .map(() => this.getLocation());
   }
 
@@ -79,7 +77,7 @@ export class FallbackHistory implements History {
   }
 
   locationChanges() {
-    return Observable.never();
+    return Observable.never<Location>();
   }
 
   pushLocation({ uri }: Location) {

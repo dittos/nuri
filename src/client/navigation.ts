@@ -1,21 +1,19 @@
-/* @flow */
-
 import {v4 as generateToken} from 'uuid';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/switchMap';
 import {Subscription} from 'rxjs/Subscription';
 import {Redirect} from '../app';
-import type {ParsedURI} from '../app';
-import type {Location} from './history';
+import {ParsedURI} from '../app';
+import {Location} from './history';
 import {parseURI} from '../util';
 
-export type NavigationEntry<T> = {|
+export type NavigationEntry<T> = {
   uri: ParsedURI;
   token: string;
   state: T;
   isRedirect: boolean;
-|};
+};
 
 export type NavigationType = 'replace' | 'push' | 'pop';
 
@@ -33,7 +31,7 @@ export interface NavigationControllerDelegate<T> {
 export class NavigationController<T> {
   delegate: NavigationControllerDelegate<T>;
   entries: {[token: string]: NavigationEntry<T>};
-  currentEntry: ?NavigationEntry<T>;
+  currentEntry: NavigationEntry<T> | null;
   started: boolean;
   loadSubscription: Subscription;
 
@@ -42,8 +40,7 @@ export class NavigationController<T> {
     this.entries = {};
     this.currentEntry = null;
     this.started = false;
-    // Subscription.EMPTY is missing in flow-typed
-    this.loadSubscription = (Subscription: any).EMPTY;
+    this.loadSubscription = Subscription.EMPTY;
   }
 
   start({ uri, token }: Location, preloadState?: T) {

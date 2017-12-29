@@ -1,7 +1,5 @@
-/* @flow */
-
-import querystring from 'querystring';
-import type {ParsedURI} from './app';
+import * as querystring from 'querystring';
+import {ParsedURI} from './app';
 
 export function uriToString(parsed: ParsedURI): string {
   var path = parsed.path;

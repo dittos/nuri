@@ -1,7 +1,7 @@
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import React from 'react';
-import {createApp, matchRoute, renderTitle} from '../src/app';
+import {createApp, matchRoute, renderTitle} from '../lib/app';
 
 function Component(props) {
   return React.createElement('div');

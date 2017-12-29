@@ -1,6 +1,4 @@
-/* @flow */
-
-import type {App, PreloadData} from '../app';
+import {App, PreloadData} from '../app';
 import {AppController} from './controller';
 import {AppView} from './view';
 import {createHistory} from './history';

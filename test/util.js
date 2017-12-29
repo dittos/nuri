@@ -1,6 +1,6 @@
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import * as util from '../src/util';
+import * as util from '../lib/util';
 
 describe('uriToString', () => {
   it('should convert uri with path', () => {

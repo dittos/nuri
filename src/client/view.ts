@@ -1,15 +1,13 @@
-/* @flow */
-
-import ReactDOM from 'react-dom';
-import type {DataUpdater} from '../app';
+import * as ReactDOM from 'react-dom';
+import {DataUpdater} from '../app';
 import {renderTitle} from '../app';
 import {createRouteElement} from '../components';
-import type {AppState, AppController} from './controller';
+import {AppState, AppController} from './controller';
 
 export class AppView {
   controller: AppController;
   container: Node;
-  state: ?AppState;
+  state: AppState | null;
 
   constructor(controller: AppController, container: Node) {
     this.controller = controller;
@@ -27,7 +25,7 @@ export class AppView {
     }, false);
   }
 
-  setState(state: ?AppState) {
+  setState(state: AppState | null) {
     this.state = state;
     this._render();
   }
