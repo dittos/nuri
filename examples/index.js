@@ -1,5 +1,5 @@
 import 'isomorphic-fetch';
-import {injectLoader, render} from '../src/client';
+import {injectLoader, render} from '../lib/client';
 import app from './app';
 
 function loader(path) {

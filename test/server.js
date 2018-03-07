@@ -41,8 +41,8 @@ describe('Server', () => {
     app.route('/posts/:id', handler);
 
     render(app, serverRequest).then(result => {
-      assert.equal(result.getHTML().replace(/data-react-checksum=".+"/g, 'CHECKSUM'),
-        '<div data-reactroot="" data-reactid="1" CHECKSUM>Hello!</div>');
+      assert.equal(result.getHTML(),
+        '<div data-reactroot="">Hello!</div>');
       assert.deepEqual(result.preloadData, {
         path: serverRequest.path,
         post: { title: 'Hello!' }
@@ -65,7 +65,7 @@ describe('Server', () => {
 
     render(app, serverRequest).then(result => {
       assert.equal(result.errorStatus, 404);
-      assert.ok(result.getHTML());
+      assert.strictEqual(result.getHTML(), '');
       done();
     }).catch(done);
   });

@@ -1,5 +1,5 @@
 import React from 'react';
-import {createApp, Link} from '../src';
+import {createApp, Link} from '../lib';
 
 const app = createApp();
 app.title = 'Hello';

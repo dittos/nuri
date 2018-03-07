@@ -1,11 +1,12 @@
 import * as React from 'react';
+import * as PropTypes from 'prop-types';
 import {DataUpdater, WireObject, RouteComponent, Loader} from './app';
 import {uriToString} from './util';
 import {AppController} from './client/controller';
 
 export class ControllerProvider extends React.Component<any> {
   static childContextTypes = {
-    controller: React.PropTypes.object
+    controller: PropTypes.object
   };
 
   render() {
@@ -66,7 +67,7 @@ export function Link(props: {
 }
 
 (Link as any).contextTypes = {
-  controller: React.PropTypes.object
+  controller: PropTypes.object
 };
 
 

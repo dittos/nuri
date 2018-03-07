@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "tsc && mocha --compilers js:babel-register",
-    "start": "webpack --context examples/ --config examples/webpack.config.js && babel-node examples/server.js",
+    "start": "tsc && webpack --context examples/ --config examples/webpack.config.js && babel-node examples/server.js",
     "build": "tsc --outDir deploy",
     "lint": "tslint 'src/**/*.ts'"
   },
@@ -14,9 +14,10 @@
   "license": "MIT",
   "devDependencies": {
     "@types/lodash": "^4.14.91",
-    "@types/react": "^15.6.10",
+    "@types/react": "^16.0.40",
     "@types/uuid": "^3.4.3",
     "babel-cli": "^6.9.0",
+    "babel-core": "^6.26.0",
     "babel-eslint": "^7.1.1",
     "babel-loader": "^6.2.4",
     "babel-plugin-transform-class-properties": "^6.9.1",
@@ -27,8 +28,8 @@
     "express": "^4.13.4",
     "isomorphic-fetch": "^2.2.1",
     "mocha": "^3.2.0",
-    "react": "^15.1.0",
-    "react-dom": "^15.1.0",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
     "sinon": "^1.17.4",
     "tslint": "^5.8.0",
     "typescript": "^2.6.2",
@@ -37,6 +38,7 @@
   "dependencies": {
     "lodash": "^4.13.1",
     "path-to-regexp": "^1.7.0",
+    "prop-types": "^15.6.1",
     "rxjs": "^5.0.3",
     "uuid": "^3.0.1"
   }
