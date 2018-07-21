@@ -29,7 +29,7 @@ function sendResponse(res, result) {
     -->
   </head>
   <body>
-    <div id="app">${result.html}</div>
+    <div id="app">${result.getHTML()}</div>
     <script>
     window.preloadData = ${JSON.stringify(result.preloadData)}
     </script>
