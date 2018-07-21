@@ -18,6 +18,7 @@ export interface History {
   locationChanges(): Observable<Location>;
   pushLocation(location: Location): void;
   doesPushLocationRefreshPage(): boolean;
+  back(): void;
 }
 
 export function createHistory(): History {
@@ -58,6 +59,10 @@ export class BrowserHistory implements History {
   doesPushLocationRefreshPage(): boolean {
     return false;
   }
+
+  back() {
+    history.back();
+  }
 }
 
 export class FallbackHistory implements History {
@@ -86,6 +91,10 @@ export class FallbackHistory implements History {
 
   doesPushLocationRefreshPage(): boolean {
     return true;
+  }
+
+  back() {
+    history.back();
   }
 }
 

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {DataUpdater} from '../app';
 import {renderTitle} from '../app';
@@ -8,6 +9,7 @@ export class AppView {
   controller: AppController;
   container: Node;
   state: AppState | null;
+  ancestorStates: AppState[];
 
   constructor(controller: AppController, container: Node) {
     this.controller = controller;
@@ -25,8 +27,9 @@ export class AppView {
     }, false);
   }
 
-  setState(state: AppState | null) {
+  setState(state: AppState | null, ancestorStates: AppState[]) {
     this.state = state;
+    this.ancestorStates = ancestorStates;
     this._render();
   }
 
@@ -36,7 +39,8 @@ export class AppView {
       return;
     }
 
-    const {handler, data, scrollX = 0, scrollY = 0} = state;
+    const parent = this.ancestorStates.length > 0 ? this.ancestorStates[0] : null;
+    const {handler, data, scrollX = (parent && parent.scrollX) || 0, scrollY = (parent && parent.scrollY) || 0} = state;
     document.title = renderTitle(this.controller.app, handler, data);
     const element = createRouteElement(handler.component, {
       controller: this.controller,
@@ -44,16 +48,19 @@ export class AppView {
       writeData: this.writeData.bind(this, state),
       loader: this.controller.getLoader(),
     });
-    ReactDOM.render(element, this.container);
+    const ancestors = this.ancestorStates.map(it => createRouteElement(it.handler.component, {
+      controller: this.controller,
+      data: it.data,
+      writeData: this.writeData.bind(this, it),
+      loader: this.controller.getLoader(),
+    }));
+    ReactDOM.render(<React.Fragment>{ancestors}{element}</React.Fragment>, this.container);
     window.scrollTo(scrollX, scrollY);
   }
 
   writeData(state: AppState, updater: DataUpdater) {
-    if (!this.state || this.state !== state)
-      return;
-
     // TODO: batch updates
-    updater(this.state.data);
+    updater(state.data);
     this._render();
   }
 

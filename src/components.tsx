@@ -32,8 +32,10 @@ export function Link(props: {
   queryParams?: {[key: string]: any},
   onClick: any,
   target?: string,
+  stacked?: boolean,
+  returnToParent?: boolean,
 }, context: {controller?: AppController}) {
-  const { to, queryParams = {}, onClick, ...restProps } = props;
+  const { to, queryParams = {}, onClick, stacked = false, returnToParent = false, ...restProps } = props;
   const uri = {
     path: to,
     query: queryParams,
@@ -58,7 +60,7 @@ export function Link(props: {
     event.preventDefault();
 
     if (allowTransition && context && context.controller) {
-      context.controller.load(uri);
+      context.controller.load(uri, { stacked, returnToParent });
     }
   }
 

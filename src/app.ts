@@ -55,6 +55,7 @@ export type BaseRequest = {
   path: string;
   query: {[key: string]: any};
   params: {[key: string]: any};
+  stacked?: boolean; // client only
 };
 
 export type Request = BaseRequest & {

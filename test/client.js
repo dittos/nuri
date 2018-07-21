@@ -49,8 +49,8 @@ describe('NavigationController', () => {
 
   it('should start without preload data', done => {
     const initialUri = {path: '/posts/1234', query: {}};
-    const stateLoader = (uri) => {
-      assert.deepEqual(uri, initialUri);
+    const stateLoader = (request) => {
+      assert.deepEqual(request.uri, initialUri);
       return Observable.defer(() => Promise.resolve('blah'));
     };
     const history = new MockHistory({uri: initialUri, token: null});
@@ -68,7 +68,7 @@ describe('NavigationController', () => {
 
   it('should start with preload data and no history token', done => {
     const initialUri = {path: '/posts/1234', query: {}};
-    const stateLoader = (uri) => {
+    const stateLoader = () => {
       throw new Error('should not be called');
     };
     const history = new MockHistory({uri: initialUri, token: null});
@@ -86,8 +86,8 @@ describe('NavigationController', () => {
 
   it('should start with preload data and history token set', done => {
     const initialUri = {path: '/posts/1234', query: {}};
-    const stateLoader = (uri) => {
-      assert.deepEqual(uri, initialUri);
+    const stateLoader = (request) => {
+      assert.deepEqual(request.uri, initialUri);
       return Observable.defer(() => Promise.resolve('blah'));
     };
     const history = new MockHistory({uri: initialUri, token: 'initial'});
@@ -104,7 +104,7 @@ describe('NavigationController', () => {
   });
 
   it('should cancel inflight load', done => {
-    const stateLoader = (uri) => {
+    const stateLoader = () => {
       return Observable.defer(() => Promise.resolve('blah'));
     };
     const initialUri = {path: '/posts/1234', query: {}};
@@ -131,8 +131,8 @@ describe('NavigationController', () => {
 
   it('should redirect', done => {
     const initialUri = {path: '/posts/1234', query: {}};
-    const stateLoader = (uri) => {
-      if (uri.path === '/redirect') {
+    const stateLoader = (request) => {
+      if (request.uri.path === '/redirect') {
         return Observable.of(new Redirect('/posts/1'));
       }
       return Observable.defer(() => Promise.resolve('blah'));
@@ -157,7 +157,7 @@ describe('NavigationController', () => {
 
   it('should restore previous state on passive location change', done => {
     const initialUri = {path: '/posts/1234', query: {}};
-    const stateLoader = (uri) => {
+    const stateLoader = () => {
       return Observable.defer(() => Promise.resolve('blah'));
     };
     const history = new MockHistory({uri: initialUri, token: null});
@@ -181,5 +181,29 @@ describe('NavigationController', () => {
       });
     };
     controller.push({path: '/test'});
+  });
+
+  it('should emit ancestor states on stacked-push', done => {
+    const initialUri = {path: '/posts/1234', query: {}};
+    const stateLoader = (request) => {
+      assert.ok(request.stacked);
+      return Observable.defer(() => Promise.resolve('blah'));
+    };
+    const history = new MockHistory({uri: initialUri, token: null});
+    controller = new NavigationController(delegate, stateLoader, history);
+
+    controller.start('initial');
+    delegate.didCommitLoad = (state, ancestorStates) => {
+      assert.deepEqual(events, [
+        'willLoad',
+        'didLoad',
+      ]);
+      assert.equal(history.locations.length, 2);
+      assert.equal(history.locations[1].uri.path, '/test');
+      assert.equal(state, 'blah');
+      assert.deepEqual(ancestorStates, ['initial']);
+      done();
+    };
+    controller.push({path: '/test'}, {stacked: true});
   });
 });

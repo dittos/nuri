@@ -20,6 +20,8 @@ app.route('/', {
         {props.data.posts.map(post =>
           <li key={post.id}>
             <Link to={`/posts/${post.id}`}>{post.title}</Link>
+            {' '}
+            <Link to={`/posts/${post.id}`} stacked>[stacked]</Link>
           </li>
         )}
       </ul>
@@ -34,17 +36,21 @@ app.route('/', {
 
 app.route('/posts/:id', {
   component(props) {
-    return <div>
-      <h1>{props.data.title}</h1>
+    return <div style={props.data.stacked ? {position: 'fixed', top: 0, left: '50%'} : {}}>
+      {props.data.stacked && <Link to="/" returnToParent>Close</Link>}
+      <h1>{props.data.post.title}</h1>
     </div>;
   },
 
   load(request) {
-    return request.loader(`/api/posts/${request.params.id}`);
+    return request.loader(`/api/posts/${request.params.id}`).then(post => ({
+      post,
+      stacked: request.stacked,
+    }));
   },
 
   renderTitle(data) {
-    return data.title;
+    return data.post.title;
   }
 });
 

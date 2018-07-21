@@ -5,7 +5,7 @@ import 'rxjs/add/operator/map';
 import {matchRoute, createRequest, isRedirect} from '../app';
 import {App, PreloadData, Loader, Redirect, WireObject, RouteHandler, ParsedURI} from '../app';
 import {NavigationController, StateLoader} from './navigation';
-import {NavigationControllerDelegate, NavigationType, NavigationEntry, LoadResult} from './navigation';
+import {NavigationControllerDelegate, NavigationEntry, LoadResult} from './navigation';
 import {History, Location} from './history';
 
 let _loader: Loader;
@@ -25,7 +25,7 @@ export interface AppControllerDelegate {
   willLoad(): void;
   didLoad(): void;
   didAbortLoad(): void;
-  didCommitState(state: AppState): void;
+  didCommitState(state: AppState, ancestorStates: AppState[]): void;
 }
 
 export class AppController {
@@ -48,8 +48,8 @@ export class AppController {
         delegates.forEach(delegate => delegate.didAbortLoad());
       },
 
-      didCommitLoad(state: AppState) {
-        delegates.forEach(delegate => delegate.didCommitState(state));
+      didCommitLoad(state: AppState, ancestorStates: AppState[]) {
+        delegates.forEach(delegate => delegate.didCommitState(state, ancestorStates));
       },
     }, this.loadState, history);
   }
@@ -67,8 +67,15 @@ export class AppController {
     this.navigationController.start(preloadState);
   }
 
-  load(uri: ParsedURI) {
-    this.navigationController.push(uri);
+  load(uri: ParsedURI, options: {
+    stacked: boolean;
+    returnToParent: boolean;
+  } = { stacked: false, returnToParent: false }) {
+    if (options.returnToParent && this.navigationController.hasParent()) {
+      this.navigationController.returnToParent();
+    } else {
+      this.navigationController.push(uri, options);
+    }
   }
 
   subscribe(delegate: AppControllerDelegate) {
@@ -79,7 +86,7 @@ export class AppController {
     return _loader;
   }
 
-  private loadState: StateLoader<AppState> = (uri) => {
+  private loadState: StateLoader<AppState> = ({ uri, stacked }) => {
     const {handler, params} = this.matchRoute(uri);
     const load = handler.load;
     if (!load) {
@@ -94,6 +101,7 @@ export class AppController {
       path: uri.path,
       query: uri.query,
       params,
+      stacked,
     });
     return Observable.defer(() => load(request))
       .map(response => {

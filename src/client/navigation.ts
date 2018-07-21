@@ -13,9 +13,15 @@ export type NavigationEntry<T> = {
   token: string;
   state: T;
   isRedirect: boolean;
+  parentToken: string | null;
 };
 
-export type NavigationType = 'replace' | 'push' | 'pop';
+type NavigationType = 'replace' | 'push' | 'pop';
+
+export interface LoadRequest {
+  uri: ParsedURI;
+  stacked: boolean;
+}
 
 export type LoadResult<T> = T | Redirect;
 
@@ -23,10 +29,10 @@ export interface NavigationControllerDelegate<T> {
   willLoad(): void;
   didLoad(): void;
   didAbortLoad(): void;
-  didCommitLoad(state: T): void;
+  didCommitLoad(state: T, ancestorStates: T[]): void;
 }
 
-export type StateLoader<T> = (uri: ParsedURI) => Observable<LoadResult<T>>;
+export type StateLoader<T> = (request: LoadRequest) => Observable<LoadResult<T>>;
 
 export class NavigationController<T> {
   private entries: {[token: string]: NavigationEntry<T>};
@@ -65,19 +71,29 @@ export class NavigationController<T> {
         token: generateToken(),
         state: preloadState,
         isRedirect: false,
+        parentToken: null,
       });
     } else {
       this.navigate('replace', location.uri, generateToken());
     }
   }
 
-  push(uri: ParsedURI) {
+  push(uri: ParsedURI, options: { stacked: boolean } = { stacked: false }) {
     if (this.history.doesPushLocationRefreshPage()) {
       this.history.pushLocation({ uri, token: null });
       return;
     }
     this.abortLoad();
-    this.navigate('push', uri, generateToken());
+    const parentToken = options.stacked && this.currentEntry ? this.currentEntry.token : null;
+    this.navigate('push', uri, generateToken(), parentToken);
+  }
+
+  hasParent(): boolean {
+    return this.currentEntry ? this.currentEntry.parentToken != null : false;
+  }
+
+  returnToParent() {
+    this.history.back();
   }
 
   private pop(location: Location) {
@@ -99,9 +115,9 @@ export class NavigationController<T> {
     }
   }
 
-  private navigate(type: NavigationType, uri: ParsedURI, token: string) {
+  private navigate(type: NavigationType, uri: ParsedURI, token: string, parentToken: string | null = null) {
     this.delegate.willLoad();
-    this.loadSubscription = this.load(uri, token).subscribe(entry => {
+    this.loadSubscription = this.load(uri, token, parentToken).subscribe(entry => {
       this.delegate.didLoad();
       if (entry.isRedirect && type === 'pop') {
         // 'pop' does not apply changed uri to address bar
@@ -112,17 +128,23 @@ export class NavigationController<T> {
     }); // TODO: handle onError
   }
 
-  private load(uri: ParsedURI, token: string, isRedirect: boolean = false): Observable<NavigationEntry<T>> {
-    return this.stateLoader(uri)
+  private load(
+    uri: ParsedURI,
+    token: string,
+    parentToken: string | null,
+    isRedirect: boolean = false
+  ): Observable<NavigationEntry<T>> {
+    return this.stateLoader({ uri, stacked: parentToken != null })
       .switchMap(result => {
         if (result instanceof Redirect) {
-          return this.load(parseURI(result.uri), generateToken(), true);
+          return this.load(parseURI(result.uri), generateToken(), parentToken, true);
         } else {
           return Observable.of({
             uri,
             token,
             state: result,
             isRedirect,
+            parentToken,
           });
         }
       });
@@ -142,6 +164,23 @@ export class NavigationController<T> {
         // Keep history untouched as the event originates from history
         break;
     }
-    this.delegate.didCommitLoad(entry.state);
+    this.delegate.didCommitLoad(entry.state, this.getAncestorStates());
+  }
+
+  private getAncestorStates(): T[] {
+    const ancestors: T[] = [];
+    let e = this.currentEntry;
+    const seen = {};
+    while (e && e.parentToken) {
+      seen[e.token] = true;
+      e = this.entries[e.parentToken];
+      if (seen[e.token]) {
+        throw new Error('Cycle detected');
+      }
+      if (e) {
+        ancestors.push(e.state);
+      }
+    }
+    return ancestors;
   }
 }

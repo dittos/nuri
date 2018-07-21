@@ -13,8 +13,8 @@ export function render(app: App, container: Node, preloadData?: PreloadData): Ap
     willLoad() {},
     didLoad() {},
     didAbortLoad() {},
-    didCommitState(state) {
-      view.setState(state);
+    didCommitState(state, ancestorStates) {
+      view.setState(state, ancestorStates);
     }
   });
   controller.start(preloadData);
