@@ -27,14 +27,16 @@ function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
-export function Link(props: {
-  to: string,
-  queryParams?: {[key: string]: any},
-  onClick?: any,
-  target?: string,
-  stacked?: boolean,
-  returnToParent?: boolean,
-}, context: {controller?: AppController}) {
+export interface LinkProps {
+  to: string;
+  queryParams?: {[key: string]: any};
+  onClick?: any;
+  target?: string;
+  stacked?: boolean;
+  returnToParent?: boolean;
+}
+
+export function Link(props: LinkProps, context: {controller?: AppController}) {
   const { to, queryParams = {}, onClick, stacked = false, returnToParent = false, ...restProps } = props;
   const uri = {
     path: to,
