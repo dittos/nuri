@@ -4,20 +4,11 @@ import {createApp, Link} from '../lib';
 const app = createApp();
 app.title = 'Hello';
 
-app.route('/', {
-  component(props) {
-    function addItem() {
-      props.writeData(data => {
-        data.posts.push({
-          id: Date.now(),
-          title: new Date().toString()
-        });
-      });
-    }
-
+class Index extends React.Component {
+  render() {
     return <div>
       <ul>
-        {props.data.posts.map(post =>
+        {this.props.data.posts.map(post =>
           <li key={post.id}>
             <Link to={`/posts/${post.id}`}>{post.title}</Link>
             {' '}
@@ -25,9 +16,24 @@ app.route('/', {
           </li>
         )}
       </ul>
-      <button onClick={addItem}>Add Item</button>
+      <button onClick={this.addItem}>Add Item</button>
     </div>;
-  },
+  }
+  componentWillUnmount() {
+    console.log('unmount');
+  }
+  addItem = () => {
+    this.props.writeData(data => {
+      data.posts.push({
+        id: Date.now(),
+        title: new Date().toString()
+      });
+    });
+  };
+}
+
+app.route('/', {
+  component: Index,
 
   load(request) {
     return request.loader('/api/posts').then(posts => ({ posts }));

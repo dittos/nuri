@@ -9,7 +9,7 @@ export class AppView {
   controller: AppController;
   container: Node;
   state: AppState | null;
-  ancestorStates: AppState[];
+  ancestorStates: AppState[] = [];
 
   constructor(controller: AppController, container: Node) {
     this.controller = controller;
@@ -27,7 +27,7 @@ export class AppView {
     }, false);
   }
 
-  setState(state: AppState | null, ancestorStates: AppState[]) {
+  setState(state: AppState, ancestorStates: AppState[]) {
     this.state = state;
     this.ancestorStates = ancestorStates;
     this._render();
@@ -39,22 +39,16 @@ export class AppView {
       return;
     }
 
-    const parent = this.ancestorStates.length > 0 ? this.ancestorStates[0] : null;
+    const parent = this.ancestorStates.length > 0 ? this.ancestorStates[this.ancestorStates.length - 1] : null;
     const {handler, data, scrollX = (parent && parent.scrollX) || 0, scrollY = (parent && parent.scrollY) || 0} = state;
     document.title = renderTitle(this.controller.app, handler, data);
-    const element = createRouteElement(handler.component, {
-      controller: this.controller,
-      data,
-      writeData: this.writeData.bind(this, state),
-      loader: this.controller.getLoader(),
-    });
-    const ancestors = this.ancestorStates.map(it => createRouteElement(it.handler.component, {
+    const elements = [...this.ancestorStates, state].map(it => createRouteElement(it.handler.component, {
       controller: this.controller,
       data: it.data,
       writeData: this.writeData.bind(this, it),
       loader: this.controller.getLoader(),
     }));
-    ReactDOM.render(<React.Fragment>{ancestors}{element}</React.Fragment>, this.container);
+    ReactDOM.render(elements, this.container);
     window.scrollTo(scrollX, scrollY);
   }
 
