@@ -290,6 +290,34 @@ describe('NavigationController', () => {
     controller.push({path: '/redirect'}, {stacked: true});
   });
 
+  it('should follow stacked redirect on non-stacked-push', done => {
+    const initialUri = {path: '/posts/1234', query: {}};
+    const stateLoader = (request) => {
+      if (request.uri.path === '/redirect') {
+        assert.ok(!request.stacked);
+        return Observable.of(new Redirect('/posts/1', {stacked: true}));
+      }
+      assert.ok(request.stacked);
+      return Observable.defer(() => Promise.resolve('blah'));
+    };
+    const history = new MockHistory({uri: initialUri, token: null});
+    controller = new NavigationController(delegate, stateLoader, history);
+
+    controller.start('initial');
+    delegate.didCommitLoad = (state, ancestorStates) => {
+      assert.deepEqual(events, [
+        'willLoad',
+        'didLoad',
+      ]);
+      assert.equal(history.locations.length, 2);
+      assert.equal(history.locations[1].uri.path, '/posts/1');
+      assert.equal(state, 'blah');
+      assert.deepEqual(ancestorStates, ['initial']);
+      done();
+    };
+    controller.push({path: '/redirect'}, {stacked: false});
+  });
+
   it('should ignore stacked option when redirect on initial load', done => {
     const initialUri = {path: '/redirect', query: {}};
     const stateLoader = (request) => {

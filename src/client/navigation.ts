@@ -84,8 +84,7 @@ export class NavigationController<T> {
       return;
     }
     this.abortLoad();
-    const parentToken = options.stacked && this.currentEntry ? this.currentEntry.token : null;
-    this.navigate('push', uri, generateToken(), parentToken);
+    this.navigate('push', uri, generateToken(), options.stacked);
   }
 
   hasParent(): boolean {
@@ -115,9 +114,10 @@ export class NavigationController<T> {
     }
   }
 
-  private navigate(type: NavigationType, uri: ParsedURI, token: string, parentToken: string | null = null) {
+  private navigate(type: NavigationType, uri: ParsedURI, token: string, stacked: boolean = false) {
+    const sourceToken = this.currentEntry ? this.currentEntry.token : null;
     this.delegate.willLoad();
-    this.loadSubscription = this.load(uri, token, parentToken).subscribe(entry => {
+    this.loadSubscription = this.load(uri, token, sourceToken, stacked).subscribe(entry => {
       this.delegate.didLoad();
       if (entry.isRedirect && type === 'pop') {
         // 'pop' does not apply changed uri to address bar
@@ -131,16 +131,18 @@ export class NavigationController<T> {
   private load(
     uri: ParsedURI,
     token: string,
-    parentToken: string | null,
+    sourceToken: string | null,
+    isStacked: boolean,
     isRedirect: boolean = false
   ): Observable<NavigationEntry<T>> {
-    return this.stateLoader({ uri, stacked: parentToken != null })
+    return this.stateLoader({ uri, stacked: isStacked && sourceToken != null })
       .switchMap(result => {
         if (result instanceof Redirect) {
           return this.load(
             parseURI(result.uri),
             generateToken(),
-            result.options.stacked ? parentToken : null,
+            sourceToken,
+            result.options.stacked || false,
             true
           );
         } else {
@@ -149,7 +151,7 @@ export class NavigationController<T> {
             token,
             state: result,
             isRedirect,
-            parentToken,
+            parentToken: isStacked ? sourceToken : null,
           });
         }
       });
