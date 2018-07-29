@@ -19,6 +19,7 @@ export interface History {
   pushLocation(location: Location): void;
   doesPushLocationRefreshPage(): boolean;
   back(): void;
+  replaceLocation(location: Location): void;
 }
 
 export function createHistory(): History {
@@ -56,6 +57,10 @@ export class BrowserHistory implements History {
     history.pushState({ token }, '', uriToString(uri));
   }
 
+  replaceLocation({ token, uri }: Location) {
+    history.replaceState({ token }, '', uriToString(uri));
+  }
+
   doesPushLocationRefreshPage(): boolean {
     return false;
   }
@@ -91,6 +96,10 @@ export class FallbackHistory implements History {
 
   doesPushLocationRefreshPage(): boolean {
     return true;
+  }
+
+  replaceLocation({ uri }: Location) {
+    window.location.replace(uriToString(uri));
   }
 
   back() {

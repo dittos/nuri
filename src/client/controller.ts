@@ -5,8 +5,7 @@ import 'rxjs/add/operator/map';
 import {matchRoute, createRequest, isRedirect} from '../app';
 import {App, PreloadData, Loader, Redirect, WireObject, RouteHandler, ParsedURI} from '../app';
 import {NavigationController, StateLoader} from './navigation';
-import {NavigationControllerDelegate, NavigationEntry, LoadResult} from './navigation';
-import {History, Location} from './history';
+import {History} from './history';
 
 let _loader: Loader;
 

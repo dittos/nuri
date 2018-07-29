@@ -1,5 +1,7 @@
 import * as pathToRegexp from 'path-to-regexp';
 import isFunction = require('lodash/isFunction');
+import isString = require('lodash/isString');
+import { uriToString } from './util';
 
 export type Route = {
   regexp: RegExp;
@@ -33,16 +35,25 @@ export type RouteMatch = {
 
 export type Loader = any; // FIXME
 
+export type RedirectOptions = {
+  stacked?: boolean; // client only
+};
+
 export class Redirect {
   uri: string;
+  options: RedirectOptions;
 
-  constructor(uri: string) {
-    this.uri = uri;
+  constructor(
+    uri: string | ParsedURI,
+    options: RedirectOptions = { stacked: false }
+  ) {
+    this.uri = isString(uri) ? uri : uriToString(uri);
+    this.options = options;
   }
 }
 
-function redirect(uri: string): Promise<Redirect> {
-  return Promise.resolve(new Redirect(uri));
+function redirect(uri: string | ParsedURI, options?: RedirectOptions): Promise<Redirect> {
+  return Promise.resolve(new Redirect(uri, options));
 }
 
 export function isRedirect(obj: any): boolean {
@@ -59,7 +70,7 @@ export type BaseRequest = {
 };
 
 export type Request = BaseRequest & {
-  redirect: (uri: string) => Promise<Redirect>;
+  redirect: (uri: string | ParsedURI, options?: RedirectOptions) => Promise<Redirect>;
 };
 
 export function createRequest(base: BaseRequest): Request {

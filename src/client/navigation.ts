@@ -137,7 +137,12 @@ export class NavigationController<T> {
     return this.stateLoader({ uri, stacked: parentToken != null })
       .switchMap(result => {
         if (result instanceof Redirect) {
-          return this.load(parseURI(result.uri), generateToken(), parentToken, true);
+          return this.load(
+            parseURI(result.uri),
+            generateToken(),
+            result.options.stacked ? parentToken : null,
+            true
+          );
         } else {
           return Observable.of({
             uri,
@@ -155,7 +160,11 @@ export class NavigationController<T> {
     this.entries[entry.token] = entry;
     switch (type) {
       case 'replace':
-        this.history.setHistoryToken(entry.token);
+        if (entry.isRedirect) {
+          this.history.replaceLocation({ uri: entry.uri, token: entry.token });
+        } else {
+          this.history.setHistoryToken(entry.token);
+        }
         break;
       case 'push':
         this.history.pushLocation({ uri: entry.uri, token: entry.token });
