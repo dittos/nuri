@@ -6,6 +6,7 @@ import {matchRoute, createRequest, isRedirect} from '../app';
 import {App, PreloadData, Loader, Redirect, WireObject, RouteHandler, ParsedURI} from '../app';
 import {NavigationController, StateLoader} from './navigation';
 import {History} from './history';
+import { parseURI, uriToString } from '../util';
 
 let _loader: Loader;
 
@@ -57,7 +58,7 @@ export class AppController {
     let preloadState;
     if (preloadData) {
       const location = this.history.getLocation();
-      const matchedRequest = this.matchRoute(location.uri);
+      const matchedRequest = this.matchRoute(parseURI(location.uri));
       preloadState = {
         handler: matchedRequest.handler,
         data: preloadData,
@@ -66,14 +67,14 @@ export class AppController {
     this.navigationController.start(preloadState);
   }
 
-  load(uri: ParsedURI, options: {
+  load(uri: ParsedURI | string, options: {
     stacked: boolean;
     returnToParent: boolean;
   } = { stacked: false, returnToParent: false }) {
     if (options.returnToParent && this.navigationController.hasParent()) {
       this.navigationController.returnToParent();
     } else {
-      this.navigationController.push(uri, options);
+      this.navigationController.push(uriToString(uri), options);
     }
   }
 
@@ -86,7 +87,8 @@ export class AppController {
   }
 
   private loadState: StateLoader<AppState> = ({ uri, stacked }) => {
-    const {handler, params} = this.matchRoute(uri);
+    const parsedURI = parseURI(uri);
+    const {handler, params} = this.matchRoute(parsedURI);
     const load = handler.load;
     if (!load) {
       return Observable.of({
@@ -97,8 +99,8 @@ export class AppController {
     const request = createRequest({
       app: this.app,
       loader: _loader,
-      path: uri.path,
-      query: uri.query,
+      path: parsedURI.path,
+      query: parsedURI.query,
       params,
       stacked,
     });

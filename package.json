@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Simple framework for isomorphic web sites",
   "main": "index.js",
+  "module": "index.js",
   "types": "index.d.ts",
   "scripts": {
     "test": "tsc && mocha --compilers js:babel-register",

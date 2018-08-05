@@ -1,7 +1,11 @@
 import * as querystring from 'querystring';
+import isString = require('lodash/isString');
 import {ParsedURI} from './app';
 
-export function uriToString(parsed: ParsedURI): string {
+export function uriToString(parsed: ParsedURI | string): string {
+  if (isString(parsed)) {
+    return parsed;
+  }
   var path = parsed.path;
   const query = querystring.stringify(parsed.query);
   if (query)

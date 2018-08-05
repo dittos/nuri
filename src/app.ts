@@ -1,6 +1,5 @@
 import * as pathToRegexp from 'path-to-regexp';
 import isFunction = require('lodash/isFunction');
-import isString = require('lodash/isString');
 import { uriToString } from './util';
 
 export type Route = {
@@ -47,7 +46,7 @@ export class Redirect {
     uri: string | ParsedURI,
     options: RedirectOptions = { stacked: false }
   ) {
-    this.uri = isString(uri) ? uri : uriToString(uri);
+    this.uri = uriToString(uri);
     this.options = options;
   }
 }

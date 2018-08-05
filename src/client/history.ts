@@ -1,14 +1,11 @@
-import * as querystring from 'querystring';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/fromEvent';
 import 'rxjs/add/observable/never';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
-import {ParsedURI} from '../app';
-import {uriToString} from '../util';
 
 export type Location = {
-  uri: ParsedURI;
+  uri: string;
   token: string | null;
 };
 
@@ -40,10 +37,7 @@ export class BrowserHistory implements History {
 
   getLocation() {
     return {
-      uri: {
-        path: location.pathname,
-        query: querystring.parse(location.search.substring(1)),
-      },
+      uri: location.pathname + location.search,
       token: history.state && history.state.token,
     };
   }
@@ -54,11 +48,11 @@ export class BrowserHistory implements History {
   }
 
   pushLocation({ token, uri }: Location) {
-    history.pushState({ token }, '', uriToString(uri));
+    history.pushState({ token }, '', uri);
   }
 
   replaceLocation({ token, uri }: Location) {
-    history.replaceState({ token }, '', uriToString(uri));
+    history.replaceState({ token }, '', uri);
   }
 
   doesPushLocationRefreshPage(): boolean {
@@ -73,10 +67,7 @@ export class BrowserHistory implements History {
 export class FallbackHistory implements History {
   getLocation() {
     return {
-      uri: {
-        path: location.pathname,
-        query: querystring.parse(location.search.substring(1)),
-      },
+      uri: location.pathname + location.search,
       token: null,
     };
   }
@@ -91,7 +82,7 @@ export class FallbackHistory implements History {
   }
 
   pushLocation({ uri }: Location) {
-    window.location.href = uriToString(uri);
+    window.location.href = uri;
   }
 
   doesPushLocationRefreshPage(): boolean {
@@ -99,7 +90,7 @@ export class FallbackHistory implements History {
   }
 
   replaceLocation({ uri }: Location) {
-    window.location.replace(uriToString(uri));
+    window.location.replace(uri);
   }
 
   back() {

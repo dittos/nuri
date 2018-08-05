@@ -4,12 +4,10 @@ import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/switchMap';
 import {Subscription} from 'rxjs/Subscription';
 import {Redirect} from '../app';
-import {ParsedURI} from '../app';
 import {Location, History} from './history';
-import {parseURI} from '../util';
 
 export type NavigationEntry<T> = {
-  uri: ParsedURI;
+  uri: string;
   token: string;
   state: T;
   isRedirect: boolean;
@@ -19,7 +17,7 @@ export type NavigationEntry<T> = {
 type NavigationType = 'replace' | 'push' | 'pop';
 
 export interface LoadRequest {
-  uri: ParsedURI;
+  uri: string;
   stacked: boolean;
 }
 
@@ -78,7 +76,7 @@ export class NavigationController<T> {
     }
   }
 
-  push(uri: ParsedURI, options: { stacked: boolean } = { stacked: false }) {
+  push(uri: string, options: { stacked: boolean } = { stacked: false }) {
     if (this.history.doesPushLocationRefreshPage()) {
       this.history.pushLocation({ uri, token: null });
       return;
@@ -114,7 +112,7 @@ export class NavigationController<T> {
     }
   }
 
-  private navigate(type: NavigationType, uri: ParsedURI, token: string, stacked: boolean = false) {
+  private navigate(type: NavigationType, uri: string, token: string, stacked: boolean = false) {
     const sourceToken = this.currentEntry ? this.currentEntry.token : null;
     this.delegate.willLoad();
     this.loadSubscription = this.load(uri, token, sourceToken, stacked).subscribe(entry => {
@@ -129,7 +127,7 @@ export class NavigationController<T> {
   }
 
   private load(
-    uri: ParsedURI,
+    uri: string,
     token: string,
     sourceToken: string | null,
     isStacked: boolean,
@@ -139,7 +137,7 @@ export class NavigationController<T> {
       .switchMap(result => {
         if (result instanceof Redirect) {
           return this.load(
-            parseURI(result.uri),
+            result.uri,
             generateToken(),
             sourceToken,
             result.options.stacked || false,
