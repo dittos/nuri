@@ -36,7 +36,7 @@ export interface LinkProps {
   returnToParent?: boolean;
 }
 
-export function Link(props: LinkProps, context: {controller?: AppController}) {
+export function Link(props: LinkProps & React.AnchorHTMLAttributes<any>, context: {controller?: AppController}) {
   const { to, queryParams = {}, onClick, stacked = false, returnToParent = false, ...restProps } = props;
   const uri = {
     path: to,
