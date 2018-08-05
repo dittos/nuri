@@ -3,10 +3,11 @@
   "version": "0.0.1",
   "description": "Simple framework for isomorphic web sites",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "tsc && mocha --compilers js:babel-register",
     "start": "tsc && webpack --context examples/ --config examples/webpack.config.js && babel-node examples/server.js",
-    "build": "tsc --outDir deploy",
+    "build": "tsc --outDir deploy && cp package.json deploy/",
     "lint": "tslint 'src/**/*.ts'"
   },
   "keywords": [],

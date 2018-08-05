@@ -1,2 +1,2 @@
 #!/bin/sh
-git clone https://github.com/dittos/nuri-builds.git
+git clone git@github.com:dittos/nuri-builds.git deploy
