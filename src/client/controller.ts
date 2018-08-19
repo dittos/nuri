@@ -99,6 +99,7 @@ export class AppController {
     const request = createRequest({
       app: this.app,
       loader: _loader,
+      uri,
       path: parsedURI.path,
       query: parsedURI.query,
       params,

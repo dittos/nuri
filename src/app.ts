@@ -62,6 +62,7 @@ export function isRedirect(obj: any): boolean {
 export type BaseRequest = {
   app: App;
   loader: Loader;
+  uri: string;
   path: string;
   query: {[key: string]: any};
   params: {[key: string]: any};

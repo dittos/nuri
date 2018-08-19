@@ -5,6 +5,7 @@ import {matchRoute, renderTitle, createRequest, isRedirect} from './app';
 import {createRouteElement} from './components';
 
 export type ServerRequest = {
+  url: string;
   path: string;
   query: {[key: string]: string};
 };
@@ -33,6 +34,7 @@ export function render(app: App, serverRequest: ServerRequest): Promise<RenderRe
   const request = createRequest({
     app,
     loader: _loaderFactory(serverRequest),
+    uri: serverRequest.url,
     path: serverRequest.path,
     query: serverRequest.query,
     params,
