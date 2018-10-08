@@ -34,6 +34,7 @@ export type StateLoader<T> = (request: LoadRequest) => Observable<LoadResult<T>>
 
 export class NavigationController<T> {
   private entries: {[token: string]: NavigationEntry<T>};
+  private entryTokens: string[];
   private currentEntry: NavigationEntry<T> | null;
   private started: boolean;
   private loadSubscription: Subscription;
@@ -44,6 +45,7 @@ export class NavigationController<T> {
     private history: History
   ) {
     this.entries = {};
+    this.entryTokens = [];
     this.currentEntry = null;
     this.started = false;
     this.loadSubscription = Subscription.EMPTY;
@@ -158,6 +160,8 @@ export class NavigationController<T> {
   private commit(type: NavigationType, entry: NavigationEntry<T>) {
     this.currentEntry = entry;
     this.entries[entry.token] = entry;
+    this.entryTokens.push(entry.token);
+    this.pruneOldEntries();
     switch (type) {
       case 'replace':
         if (entry.isRedirect) {
@@ -191,5 +195,38 @@ export class NavigationController<T> {
       }
     }
     return ancestors;
+  }
+
+  private pruneOldEntries(maxSize: number = 5) {
+    let e = this.currentEntry;
+    const keep = {};
+    while (e && e.parentToken) {
+      keep[e.token] = true;
+      e = this.entries[e.parentToken];
+      if (keep[e.token]) {
+        throw new Error('Cycle detected');
+      }
+    }
+
+    let cachedCount = 0;
+    for (var i = this.entryTokens.length - 1; i >= 0; i--) {
+      const token = this.entryTokens[i];
+      if (keep[token]) {
+        continue;
+      }
+      keep[token] = true;
+      cachedCount++;
+      if (cachedCount >= maxSize) {
+        break;
+      }
+    }
+
+    Object.keys(this.entries).forEach(token => {
+      if (!keep[token]) {
+        delete this.entries[token];
+      }
+    });
+
+    this.entryTokens = this.entryTokens.filter(token => this.entries[token]);
   }
 }

@@ -343,4 +343,50 @@ describe('NavigationController', () => {
     };
     controller.start();
   });
+
+  it('should prune old entries', done => {
+    const stateLoader = () => {
+      return Observable.defer(() => Promise.resolve('blah'));
+    };
+    const initialLocation = {uri: '0', token: 'first'};
+    const history = new MockHistory(initialLocation);
+    controller = new NavigationController(delegate, stateLoader, history);
+    
+    delegate.didCommitLoad = () => {
+      if (history.locations.length <= 5) {
+        controller.push(history.locations.length.toString());
+      } else {
+        delegate.didLoad = () => {
+          done();
+        };
+        delegate.didCommitLoad = () => {};
+        history.locationChanges().next(initialLocation);
+      }
+    };
+    controller.start();
+  });
+
+  it('should not prune old but active entries', done => {
+    const stateLoader = () => {
+      return Observable.defer(() => Promise.resolve('blah'));
+    };
+    const initialLocation = {uri: '0', token: 'first'};
+    const history = new MockHistory(initialLocation);
+    controller = new NavigationController(delegate, stateLoader, history);
+    
+    delegate.didCommitLoad = () => {
+      if (history.locations.length <= 5) {
+        controller.push(history.locations.length.toString(), { stacked: true });
+      } else {
+        delegate.didLoad = () => {
+          assert.fail();
+        };
+        delegate.didCommitLoad = () => {
+          done();
+        };
+        history.locationChanges().next(initialLocation);
+      }
+    };
+    controller.start();
+  });
 });
