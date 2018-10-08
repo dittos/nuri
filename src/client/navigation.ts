@@ -1,4 +1,4 @@
-import {v4 as generateToken} from 'uuid';
+import * as generateToken from 'nanoid/non-secure';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/switchMap';

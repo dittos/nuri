@@ -17,7 +17,6 @@
   "devDependencies": {
     "@types/lodash": "^4.14.91",
     "@types/react": "^16.0.40",
-    "@types/uuid": "^3.4.3",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-eslint": "^7.1.1",
@@ -39,9 +38,9 @@
   },
   "dependencies": {
     "lodash": "^4.17.10",
+    "nanoid": "^1.2.6",
     "path-to-regexp": "^1.7.0",
     "prop-types": "^15.6.1",
-    "rxjs": "^5.0.3",
-    "uuid": "^3.0.1"
+    "rxjs": "^5.0.3"
   }
 }
