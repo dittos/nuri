@@ -1,8 +1,6 @@
 import * as generateToken from 'nanoid/non-secure';
-import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/operator/switchMap';
-import {Subscription} from 'rxjs/Subscription';
+import {Observable, Subscription, of} from 'rxjs';
+import {switchMap} from 'rxjs/operators';
 import {Redirect} from '../app';
 import {Location, History} from './history';
 
@@ -136,7 +134,7 @@ export class NavigationController<T> {
     isRedirect: boolean = false
   ): Observable<NavigationEntry<T>> {
     return this.stateLoader({ uri, stacked: isStacked && sourceToken != null })
-      .switchMap(result => {
+      .pipe(switchMap(result => {
         if (result instanceof Redirect) {
           return this.load(
             result.uri,
@@ -146,7 +144,7 @@ export class NavigationController<T> {
             true
           );
         } else {
-          return Observable.of({
+          return of({
             uri,
             token,
             state: result,
@@ -154,7 +152,7 @@ export class NavigationController<T> {
             parentToken: isStacked ? sourceToken : null,
           });
         }
-      });
+      }));
   }
 
   private commit(type: NavigationType, entry: NavigationEntry<T>) {

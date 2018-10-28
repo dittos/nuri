@@ -1,8 +1,5 @@
-import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/observable/fromEvent';
-import 'rxjs/add/observable/never';
-import 'rxjs/add/operator/filter';
-import 'rxjs/add/operator/map';
+import {Observable, fromEvent, never} from 'rxjs';
+import {filter, map} from 'rxjs/operators';
 
 export type Location = {
   uri: string;
@@ -28,11 +25,13 @@ export function createHistory(): History {
 
 export class BrowserHistory implements History {
   locationChanges() {
-    return Observable.fromEvent(window, 'popstate')
+    return fromEvent(window, 'popstate')
       // Ignore extraneous popstate events in WebKit
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
-      .filter((event: PopStateEvent) => event.state !== undefined)
-      .map(() => this.getLocation());
+      .pipe(
+        filter((event: PopStateEvent) => event.state !== undefined),
+        map(() => this.getLocation())
+      );
   }
 
   getLocation() {
@@ -78,7 +77,7 @@ export class FallbackHistory implements History {
   }
 
   locationChanges(): Observable<Location> {
-    return Observable.never();
+    return never();
   }
 
   pushLocation({ uri }: Location) {

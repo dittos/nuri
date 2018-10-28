@@ -1,7 +1,5 @@
-import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/observable/defer';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/operator/map';
+import {Observable, defer, of} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {matchRoute, createRequest, isRedirect} from '../app';
 import {App, PreloadData, Loader, Redirect, WireObject, RouteHandler, ParsedURI} from '../app';
 import {NavigationController, StateLoader} from './navigation';
@@ -91,7 +89,7 @@ export class AppController {
     const {handler, params} = this.matchRoute(parsedURI);
     const load = handler.load;
     if (!load) {
-      return Observable.of({
+      return of({
         handler,
         data: {},
       });
@@ -105,8 +103,8 @@ export class AppController {
       params,
       stacked,
     });
-    return Observable.defer(() => load(request))
-      .map(response => {
+    return defer(() => load(request))
+      .pipe(map(response => {
         if (isRedirect(response)) {
           return response as Redirect;
         } else {
@@ -116,7 +114,7 @@ export class AppController {
             data,
           };
         }
-      });
+      }));
   }
 
   private matchRoute(uri: ParsedURI) {
