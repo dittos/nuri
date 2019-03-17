@@ -6,6 +6,7 @@ import {
   injectLoaderFactory,
   render,
 } from '../lib/server';
+import {wrapHTML} from '../lib/bootstrap';
 
 function Component(props) {
   return React.createElement('div', null, props.data.post.title);
@@ -42,7 +43,7 @@ describe('Server', () => {
 
     render(app, serverRequest).then(result => {
       assert.equal(result.getHTML(),
-        '<div data-reactroot="">Hello!</div>');
+        wrapHTML('<div data-reactroot="">Hello!</div>'));
       assert.deepEqual(result.preloadData, {
         path: serverRequest.path,
         post: { title: 'Hello!' }

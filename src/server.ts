@@ -3,6 +3,7 @@ import * as ReactDOMServer from 'react-dom/server';
 import {App, Request, Response, Redirect, WireObject, PreloadData, RouteHandler, DataUpdater, Loader} from './app';
 import {matchRoute, renderTitle, createRequest, isRedirect} from './app';
 import {createRouteElement} from './components';
+import {wrapHTML} from './bootstrap';
 
 export type ServerRequest = {
   url: string;
@@ -74,7 +75,10 @@ function createResult(request: Request, handler: RouteHandler, response: Respons
     errorStatus,
     element,
     getHTML() {
-      return ReactDOMServer.renderToString(element);
+      if (errorStatus) {
+        return '';
+      }
+      return wrapHTML(ReactDOMServer.renderToString(element));
     }
   };
 }

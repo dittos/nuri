@@ -1,4 +1,5 @@
 import {App, PreloadData} from '../app';
+import {containerElementId, globalVariableName} from '../bootstrap';
 import {AppController} from './controller';
 import {AppView} from './view';
 import {createHistory} from './history';
@@ -19,4 +20,18 @@ export function render(app: App, container: Node, preloadData?: PreloadData): Ap
   });
   controller.start(preloadData);
   return controller;
+}
+
+export function bootstrap(app: App, callback: (controller?: AppController) => void) {
+  const globalVariable = window[globalVariableName];
+  if (!globalVariable) {
+    // HTML is not rendered yet
+    window[globalVariableName] = (preloadData) => {
+      window[globalVariableName].preloadData = preloadData;
+      bootstrap(app, callback);
+    };
+    return;
+  }
+  const controller = render(app, document.getElementById(containerElementId)!, globalVariable.preloadData);
+  callback(controller);
 }
