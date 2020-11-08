@@ -28,7 +28,7 @@ export function injectLoaderFactory(loaderFactory: (serverRequest: ServerRequest
 }
 
 // eslint-disable-next-line no-unused-vars
-function noOpWriteData(updater: DataUpdater) {}
+function noOpWriteData(updater: DataUpdater<any>) {}
 
 export function render(app: App, serverRequest: ServerRequest): Promise<RenderResult> {
   const {handler, params} = matchRoute(app, serverRequest);
@@ -51,7 +51,7 @@ export function render(app: App, serverRequest: ServerRequest): Promise<RenderRe
   );
 }
 
-function createResult(request: Request, handler: RouteHandler, response: Response, errorStatus?: number) {
+function createResult<D>(request: Request, handler: RouteHandler<D>, response: Response<D>, errorStatus?: number) {
   if (isRedirect(response)) {
     return {
       preloadData: {},

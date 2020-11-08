@@ -13,7 +13,7 @@ export function injectLoader(loader: Loader) {
 }
 
 export type AppState = {
-  handler: RouteHandler;
+  handler: RouteHandler<any>;
   data: WireObject;
   scrollX?: number;
   scrollY?: number;

@@ -52,7 +52,7 @@ export class AppView {
     window.scrollTo(scrollX, scrollY);
   }
 
-  writeData(state: AppState, updater: DataUpdater) {
+  writeData(state: AppState, updater: DataUpdater<any>) {
     // TODO: batch updates
     updater(state.data);
     this._render();

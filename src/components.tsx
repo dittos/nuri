@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as PropTypes from 'prop-types';
-import {DataUpdater, WireObject, RouteComponent, Loader} from './app';
+import {RouteComponent, RouteComponentProps} from './app';
 import {uriToString} from './util';
 import {AppController} from './client/controller';
 
@@ -79,12 +79,7 @@ function Null() {
   return null;
 }
 
-export function createRouteElement(component: RouteComponent | undefined | null, props: {
-  controller?: AppController,
-  data: WireObject,
-  writeData: (updater: DataUpdater) => void,
-  loader: Loader,
-}): React.ReactElement<any> {
+export function createRouteElement<D>(component: RouteComponent<D> | undefined | null, props: RouteComponentProps<D>): React.ReactElement<any> {
   if (!component)
     return <Null />;
   return <ControllerProvider controller={props.controller}>

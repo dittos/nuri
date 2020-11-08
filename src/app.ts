@@ -1,25 +1,33 @@
 import * as pathToRegexp from 'path-to-regexp';
 import isFunction = require('lodash/isFunction');
 import { uriToString } from './util';
+import { AppController } from './client/controller';
 
 export type Route = {
   regexp: RegExp;
   keys: any[];
-  handler: RouteHandler;
+  handler: RouteHandler<any>;
 };
 
 // JSON-serializable "wire" types.
 export type WireObject = { [key: string]: any };
 
-export type RouteComponent = React.ComponentType<any>;
+export type RouteComponentProps<D> = {
+  controller?: AppController;
+  data: D;
+  writeData: (updater: DataUpdater<D>) => void;
+  loader: Loader;
+};
 
-export type Response = WireObject | Redirect;
+export type RouteComponent<D> = React.ComponentType<RouteComponentProps<D>>;
 
-export type RouteHandler = {
-  component?: RouteComponent;
-  load?: (request: Request) => Promise<Response>;
-  renderTitle?: (data: WireObject) => string;
-  renderMeta?: (data: WireObject) => WireObject;
+export type Response<D> = D | Redirect;
+
+export type RouteHandler<D> = {
+  component?: RouteComponent<D>;
+  load?: (request: Request) => Promise<Response<D>>;
+  renderTitle?: (data: D) => string;
+  renderMeta?: (data: D) => WireObject;
 };
 
 export type ParsedURI = {
@@ -28,7 +36,7 @@ export type ParsedURI = {
 };
 
 export type RouteMatch = {
-  handler: RouteHandler;
+  handler: RouteHandler<any>;
   params: {[key: string]: any};
 };
 
@@ -55,7 +63,7 @@ function redirect(uri: string | ParsedURI, options?: RedirectOptions): Promise<R
   return Promise.resolve(new Redirect(uri, options));
 }
 
-export function isRedirect(obj: any): boolean {
+export function isRedirect(obj: any): obj is Redirect {
   return obj instanceof Redirect;
 }
 
@@ -82,7 +90,7 @@ export function createRequest(base: BaseRequest): Request {
 
 export type PreloadData = WireObject;
 
-const defaultHandler: RouteHandler = {
+const defaultHandler: RouteHandler<any> = {
   load() {
     return Promise.reject({status: 404});
   },
@@ -92,7 +100,7 @@ const defaultHandler: RouteHandler = {
 
 export class App {
   routes: Route[];
-  defaultHandler: RouteHandler;
+  defaultHandler: RouteHandler<any>;
   title: string | ((routeTitle?: string) => string);
 
   constructor() {
@@ -101,7 +109,7 @@ export class App {
     this.title = '';
   }
 
-  route(path: string, handler: RouteHandler) {
+  route<D>(path: string, handler: RouteHandler<D>) {
     if (path === '*') {
       this.defaultHandler = handler;
       return;
@@ -143,7 +151,7 @@ export function matchRoute(app: App, uri: ParsedURI): RouteMatch {
   };
 }
 
-export function renderTitle(app: App, handler: RouteHandler, data: WireObject): string {
+export function renderTitle<D>(app: App, handler: RouteHandler<D>, data: D): string {
   const routeTitle = handler.renderTitle ? handler.renderTitle(data) : '';
   const titleFn: any = app.title;
   if (isFunction(titleFn)) {
@@ -154,4 +162,4 @@ export function renderTitle(app: App, handler: RouteHandler, data: WireObject): 
 }
 
 // TODO: callback
-export type DataUpdater = (data: WireObject) => void;
+export type DataUpdater<D> = (data: D) => void;
