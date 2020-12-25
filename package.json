@@ -37,7 +37,7 @@
     "webpack": "^1.13.1"
   },
   "dependencies": {
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.19",
     "nanoid": "^1.2.6",
     "path-to-regexp": "^1.7.0",
     "rxjs": "^6.3.3"
