@@ -16,7 +16,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/lodash": "^4.14.91",
-    "@types/react": "^16.0.40",
+    "@types/react": "^16.14.2",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-eslint": "^7.1.1",
@@ -29,8 +29,8 @@
     "express": "^4.16.3",
     "isomorphic-fetch": "^2.2.1",
     "mocha": "^5.2.0",
-    "react": "^16.2.0",
-    "react-dom": "^16.2.0",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
     "sinon": "^1.17.4",
     "tslint": "^5.8.0",
     "typescript": "^2.6.2",
@@ -40,7 +40,6 @@
     "lodash": "^4.17.10",
     "nanoid": "^1.2.6",
     "path-to-regexp": "^1.7.0",
-    "prop-types": "^15.6.1",
     "rxjs": "^6.3.3"
   }
 }

@@ -1,23 +1,9 @@
 import * as React from 'react';
-import * as PropTypes from 'prop-types';
 import {RouteComponent, RouteComponentProps} from './app';
 import {uriToString} from './util';
 import {AppController} from './client/controller';
 
-export class ControllerProvider extends React.Component<any> {
-  static childContextTypes = {
-    controller: PropTypes.object
-  };
-
-  render() {
-    return React.Children.only(this.props.children);
-  }
-  
-  getChildContext() {
-    return {controller: this.props.controller};
-  }
-}
-
+export const ControllerContext = React.createContext<AppController | undefined>(undefined);
 
 function isLeftClickEvent(event) {
   return event.button === 0;
@@ -36,7 +22,8 @@ export interface LinkProps {
   returnToParent?: boolean;
 }
 
-export function Link(props: LinkProps & React.AnchorHTMLAttributes<any>, context: {controller?: AppController}) {
+export function Link(props: LinkProps & React.AnchorHTMLAttributes<any>) {
+  const controller = React.useContext(ControllerContext);
   const { to, queryParams = {}, onClick, stacked = false, returnToParent = false, ...restProps } = props;
   const uri = {
     path: to,
@@ -61,18 +48,14 @@ export function Link(props: LinkProps & React.AnchorHTMLAttributes<any>, context
 
     event.preventDefault();
 
-    if (allowTransition && context && context.controller) {
-      context.controller.load(uri, { stacked, returnToParent });
+    if (allowTransition && controller) {
+      controller.load(uri, { stacked, returnToParent });
     }
   }
 
   const href = uriToString(uri);
   return <a {...restProps} href={href} onClick={handleClick} />;
 }
-
-(Link as any).contextTypes = {
-  controller: PropTypes.object
-};
 
 
 function Null() {
@@ -82,7 +65,7 @@ function Null() {
 export function createRouteElement<D>(component: RouteComponent<D> | undefined | null, props: RouteComponentProps<D>): React.ReactElement<any> {
   if (!component)
     return <Null />;
-  return <ControllerProvider controller={props.controller}>
+  return <ControllerContext.Provider value={props.controller}>
     {React.createElement(component, props)}
-  </ControllerProvider>;
+  </ControllerContext.Provider>;
 }
