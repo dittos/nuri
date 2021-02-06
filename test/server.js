@@ -2,17 +2,12 @@ import {describe, it} from 'mocha';
 import assert from 'assert';
 import React from 'react';
 import {createApp} from '../lib/app';
-import {
-  injectLoaderFactory,
-  render,
-} from '../lib/server';
+import {render} from '../lib/server';
 import {wrapHTML} from '../lib/bootstrap';
 
 function Component(props) {
   return React.createElement('div', null, props.data.post.title);
 }
-
-injectLoaderFactory(serverRequest => serverRequest);
 
 describe('Server', () => {
   it('should render request', done => {
@@ -41,7 +36,7 @@ describe('Server', () => {
     };
     app.route('/posts/:id', handler);
 
-    render(app, serverRequest).then(result => {
+    render(app, serverRequest, serverRequest).then(result => {
       assert.equal(result.getHTML(),
         wrapHTML('<div>Hello!</div>'));
       assert.deepEqual(result.preloadData, {

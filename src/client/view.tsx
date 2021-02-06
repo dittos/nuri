@@ -5,13 +5,13 @@ import {renderTitle} from '../app';
 import {createRouteElement} from '../components';
 import {AppState, AppController} from './controller';
 
-export class AppView {
-  controller: AppController;
+export class AppView<L> {
+  controller: AppController<L>;
   container: Element;
   state: AppState | null;
   ancestorStates: AppState[] = [];
 
-  constructor(controller: AppController, container: Element) {
+  constructor(controller: AppController<L>, container: Element) {
     this.controller = controller;
     this.container = container;
     this.state = null;

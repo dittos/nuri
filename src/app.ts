@@ -3,29 +3,29 @@ import isFunction = require('lodash/isFunction');
 import { uriToString } from './util';
 import { AppController } from './client/controller';
 
-export type Route = {
+export type Route<L> = {
   regexp: RegExp;
   keys: any[];
-  handler: RouteHandler<any>;
+  handler: RouteHandler<any, L>;
 };
 
 // JSON-serializable "wire" types.
 export type WireObject = { [key: string]: any };
 
-export type RouteComponentProps<D> = {
-  controller?: AppController;
+export type RouteComponentProps<D, L> = {
+  controller?: AppController<L>;
   data: D;
   writeData: (updater: DataUpdater<D>) => void;
-  loader: Loader;
+  loader: L;
 };
 
-export type RouteComponent<D> = React.ComponentType<RouteComponentProps<D>>;
+export type RouteComponent<D, L> = React.ComponentType<RouteComponentProps<D, L>>;
 
 export type Response<D> = D | Redirect;
 
-export type RouteHandler<D> = {
-  component?: RouteComponent<D>;
-  load?: (request: Request) => Promise<Response<D>>;
+export type RouteHandler<D, L> = {
+  component?: RouteComponent<D, L>;
+  load?: (request: Request<L>) => Promise<Response<D>>;
   renderTitle?: (data: D) => string;
   renderMeta?: (data: D) => WireObject;
 };
@@ -35,12 +35,10 @@ export type ParsedURI = {
   query: {[key: string]: any};
 };
 
-export type RouteMatch = {
-  handler: RouteHandler<any>;
+export type RouteMatch<L> = {
+  handler: RouteHandler<any, L>;
   params: {[key: string]: any};
 };
-
-export type Loader = any; // FIXME
 
 export type RedirectOptions = {
   stacked?: boolean; // client only
@@ -67,9 +65,8 @@ export function isRedirect(obj: any): obj is Redirect {
   return obj instanceof Redirect;
 }
 
-export type BaseRequest = {
-  app: App;
-  loader: Loader;
+export type BaseRequest<L> = {
+  loader: L;
   uri: string;
   path: string;
   query: {[key: string]: any};
@@ -77,11 +74,11 @@ export type BaseRequest = {
   stacked?: boolean; // client only
 };
 
-export type Request = BaseRequest & {
+export type Request<L> = BaseRequest<L> & {
   redirect: (uri: string | ParsedURI, options?: RedirectOptions) => Promise<Redirect>;
 };
 
-export function createRequest(base: BaseRequest): Request {
+export function createRequest<L>(base: BaseRequest<L>): Request<L> {
   return {
     ...base,
     redirect,
@@ -90,7 +87,7 @@ export function createRequest(base: BaseRequest): Request {
 
 export type PreloadData = WireObject;
 
-const defaultHandler: RouteHandler<any> = {
+const defaultHandler: RouteHandler<any, any> = {
   load() {
     return Promise.reject({status: 404});
   },
@@ -98,9 +95,9 @@ const defaultHandler: RouteHandler<any> = {
   component: () => null,
 };
 
-export class App {
-  routes: Route[];
-  defaultHandler: RouteHandler<any>;
+export class App<L> {
+  routes: Route<L>[];
+  defaultHandler: RouteHandler<any, L>;
   title: string | ((routeTitle?: string) => string);
 
   constructor() {
@@ -109,7 +106,7 @@ export class App {
     this.title = '';
   }
 
-  route<D>(path: string, handler: RouteHandler<D>) {
+  route<D>(path: string, handler: RouteHandler<D, L>) {
     if (path === '*') {
       this.defaultHandler = handler;
       return;
@@ -125,11 +122,11 @@ export class App {
   }
 }
 
-export function createApp(): App {
+export function createApp<L>(): App<L> {
   return new App();
 }
 
-export function matchRoute(app: App, uri: ParsedURI): RouteMatch {
+export function matchRoute<L>(app: App<L>, uri: ParsedURI): RouteMatch<L> {
   const routes = app.routes;
   for (var i = 0; i < routes.length; i++) {
     const route = routes[i];
@@ -151,7 +148,7 @@ export function matchRoute(app: App, uri: ParsedURI): RouteMatch {
   };
 }
 
-export function renderTitle<D>(app: App, handler: RouteHandler<D>, data: D): string {
+export function renderTitle<D, L>(app: App<L>, handler: RouteHandler<D, L>, data: D): string {
   const routeTitle = handler.renderTitle ? handler.renderTitle(data) : '';
   const titleFn: any = app.title;
   if (isFunction(titleFn)) {

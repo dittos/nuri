@@ -3,7 +3,7 @@ import {RouteComponent, RouteComponentProps} from './app';
 import {uriToString} from './util';
 import {AppController} from './client/controller';
 
-export const ControllerContext = React.createContext<AppController | undefined>(undefined);
+export const ControllerContext = React.createContext<AppController<any> | undefined>(undefined);
 
 function isLeftClickEvent(event: React.MouseEvent) {
   return event.button === 0;
@@ -62,7 +62,7 @@ function Null() {
   return null;
 }
 
-export function createRouteElement<D>(component: RouteComponent<D> | undefined | null, props: RouteComponentProps<D>): React.ReactElement<any> {
+export function createRouteElement<D, L>(component: RouteComponent<D, L> | undefined | null, props: RouteComponentProps<D, L>): React.ReactElement<any> {
   if (!component)
     return <Null />;
   return <ControllerContext.Provider value={props.controller}>

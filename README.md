@@ -50,15 +50,17 @@ export default app;
 import {injectLoader, render} from 'nuri/client';
 import {app} from './app';
 
-// Inject loader to be accesible from `load` hook
-injectLoader(function loader(path) {
+function loader(path) {
   return fetch(path).then(r => r.json());
-});
+}
 
 render(
   // Render `app` to DOM node
   app,
   document.getElementById('container'),
+  
+  // Inject loader to be accesible from `load` hook
+  loader,
   
   // Provide the data preloaded from server.
   // If exist, for the first route, `load` hook is skipped and
@@ -71,15 +73,8 @@ render(
 
 ```js
 import 'isomorphic-fetch';
-import {injectLoaderFactory, render} from 'nuri/server';
+import {render} from 'nuri/server';
 import app from './app';
-
-// Loader Factory is called per request and returned loader is passed into `load` hook
-injectLoaderFactory(serverRequest => {
-  return function loader(path) {
-    return fetch('http://localhost:9000' + path).then(r => r.json());
-  };
-});
 
 // Let's use fake server request
 // This would come from server library in real app
@@ -88,7 +83,13 @@ var serverRequest = {
   query: {},
 };
 
-render(app, serverRequest).then(result => {
+// Loader to be passed into `load` hook
+// You may create contextual loader per request
+function loader(path) {
+  return fetch('http://localhost:9000' + path).then(r => r.json());
+}
+
+render(app, serverRequest, loader).then(result => {
   // `result` contains several properties:
   // - getHTML(): prerenders HTML markup (not done eagerly because it's fairly expensive)
   // - preloadData: fetched data from `load` hook

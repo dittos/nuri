@@ -1,19 +1,13 @@
-import {Observable, defer, of} from 'rxjs';
+import {defer, of} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {matchRoute, createRequest, isRedirect} from '../app';
-import {App, PreloadData, Loader, Redirect, WireObject, RouteHandler, ParsedURI} from '../app';
+import {App, PreloadData, WireObject, RouteHandler, ParsedURI} from '../app';
 import {NavigationController, StateLoader} from './navigation';
 import {History} from './history';
 import { parseURI, uriToString } from '../util';
 
-let _loader: Loader;
-
-export function injectLoader(loader: Loader) {
-  _loader = loader;
-}
-
 export type AppState = {
-  handler: RouteHandler<any>;
+  handler: RouteHandler<any, any>;
   data: WireObject;
   scrollX?: number;
   scrollY?: number;
@@ -26,11 +20,11 @@ export interface AppControllerDelegate {
   didCommitState(state: AppState, ancestorStates: AppState[]): void;
 }
 
-export class AppController {
+export class AppController<L> {
   private navigationController: NavigationController<AppState>;
   private delegates: AppControllerDelegate[];
 
-  constructor(public app: App, private history: History) {
+  constructor(public app: App<L>, private history: History, private loader: L) {
     const delegates: AppControllerDelegate[] = [];
     this.delegates = delegates;
     this.navigationController = new NavigationController({
@@ -80,8 +74,8 @@ export class AppController {
     this.delegates.push(delegate);
   }
 
-  getLoader(): Loader {
-    return _loader;
+  getLoader(): L {
+    return this.loader;
   }
 
   private loadState: StateLoader<AppState> = ({ uri, stacked }) => {
@@ -94,9 +88,8 @@ export class AppController {
         data: {},
       });
     }
-    const request = createRequest({
-      app: this.app,
-      loader: _loader,
+    const request = createRequest<L>({
+      loader: this.loader,
       uri,
       path: parsedURI.path,
       query: parsedURI.query,
@@ -106,7 +99,7 @@ export class AppController {
     return defer(() => load(request))
       .pipe(map(response => {
         if (isRedirect(response)) {
-          return response as Redirect;
+          return response;
         } else {
           const data: WireObject = response;
           return {
@@ -118,6 +111,6 @@ export class AppController {
   }
 
   private matchRoute(uri: ParsedURI) {
-    return matchRoute(this.app, uri);
+    return matchRoute<L>(this.app, uri);
   }
 }

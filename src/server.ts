@@ -1,15 +1,15 @@
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
-import {App, Request, Response, Redirect, WireObject, PreloadData, RouteHandler, DataUpdater, Loader} from './app';
+import {App, Request, Response, WireObject, PreloadData, RouteHandler, DataUpdater} from './app';
 import {matchRoute, renderTitle, createRequest, isRedirect} from './app';
 import {createRouteElement} from './components';
 import {wrapHTML} from './bootstrap';
 
-export type ServerRequest = {
+export interface ServerRequest {
   url: string;
   path: string;
   query: {[key: string]: string};
-};
+}
 
 export type RenderResult = {
   preloadData: PreloadData;
@@ -21,20 +21,13 @@ export type RenderResult = {
   getHTML(): string;
 };
 
-let _loaderFactory: (serverRequest: ServerRequest) => Loader;
-
-export function injectLoaderFactory(loaderFactory: (serverRequest: ServerRequest) => Loader) {
-  _loaderFactory = loaderFactory;
-}
-
 // eslint-disable-next-line no-unused-vars
 function noOpWriteData(updater: DataUpdater<any>) {}
 
-export function render(app: App, serverRequest: ServerRequest): Promise<RenderResult> {
+export function render<L>(app: App<L>, serverRequest: ServerRequest, loader: L): Promise<RenderResult> {
   const {handler, params} = matchRoute(app, serverRequest);
   const request = createRequest({
-    app,
-    loader: _loaderFactory(serverRequest),
+    loader,
     uri: serverRequest.url,
     path: serverRequest.path,
     query: serverRequest.query,
@@ -44,20 +37,20 @@ export function render(app: App, serverRequest: ServerRequest): Promise<RenderRe
     handler.load(request)
     : Promise.resolve({});
   return loadPromise.then(
-    response => createResult(request, handler, response),
+    response => createResult(app, request, handler, response),
     err => err.status ?
-      createResult(request, handler, {}, err.status)
+      createResult(app, request, handler, {}, err.status)
       : Promise.reject<RenderResult>(err)
   );
 }
 
-function createResult<D>(request: Request, handler: RouteHandler<D>, response: Response<D>, errorStatus?: number) {
+function createResult<D, L>(app: App<L>, request: Request<L>, handler: RouteHandler<D, L>, response: Response<D>, errorStatus?: number) {
   if (isRedirect(response)) {
     return {
       preloadData: {},
       title: '',
       meta: {},
-      redirectURI: (response as Redirect).uri,
+      redirectURI: response.uri,
       getHTML: () => '',
     };
   }
@@ -70,7 +63,7 @@ function createResult<D>(request: Request, handler: RouteHandler<D>, response: R
   });
   return {
     preloadData: data,
-    title: renderTitle(request.app, handler, data),
+    title: renderTitle(app, handler, data),
     meta: handler.renderMeta ? handler.renderMeta(data) : {},
     errorStatus,
     element,
