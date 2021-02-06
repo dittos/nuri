@@ -25,11 +25,11 @@ export function createHistory(): History {
 
 export class BrowserHistory implements History {
   locationChanges() {
-    return fromEvent(window, 'popstate')
+    return fromEvent<PopStateEvent>(window, 'popstate')
       // Ignore extraneous popstate events in WebKit
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
       .pipe(
-        filter((event: PopStateEvent) => event.state !== undefined),
+        filter(event => event.state !== undefined),
         map(() => this.getLocation())
       );
   }

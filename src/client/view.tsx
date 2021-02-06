@@ -7,11 +7,11 @@ import {AppState, AppController} from './controller';
 
 export class AppView {
   controller: AppController;
-  container: Node;
+  container: Element;
   state: AppState | null;
   ancestorStates: AppState[] = [];
 
-  constructor(controller: AppController, container: Node) {
+  constructor(controller: AppController, container: Element) {
     this.controller = controller;
     this.container = container;
     this.state = null;

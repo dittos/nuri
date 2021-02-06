@@ -1,4 +1,4 @@
-import * as generateToken from 'nanoid/non-secure';
+import { nanoid as generateToken } from 'nanoid/non-secure';
 import {Observable, Subscription, of} from 'rxjs';
 import {switchMap} from 'rxjs/operators';
 import {Redirect} from '../app';
@@ -181,7 +181,7 @@ export class NavigationController<T> {
   private getAncestorStates(): T[] {
     const ancestors: T[] = [];
     let e = this.currentEntry;
-    const seen = {};
+    const seen: {[token: string]: boolean} = {};
     while (e && e.parentToken) {
       seen[e.token] = true;
       e = this.entries[e.parentToken];
@@ -197,7 +197,7 @@ export class NavigationController<T> {
 
   private pruneOldEntries(maxSize: number = 5) {
     let e = this.currentEntry;
-    const keep = {};
+    const keep: {[token: string]: boolean} = {};
     while (e && e.parentToken) {
       keep[e.token] = true;
       e = this.entries[e.parentToken];

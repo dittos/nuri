@@ -6,7 +6,7 @@ import {createHistory} from './history';
 
 export {injectLoader} from './controller';
 
-export function render(app: App, container: Node, preloadData?: PreloadData): AppController {
+export function render(app: App, container: Element, preloadData?: PreloadData): AppController {
   const history = createHistory();
   const controller = new AppController(app, history);
   const view = new AppView(controller, container);
@@ -22,12 +22,12 @@ export function render(app: App, container: Node, preloadData?: PreloadData): Ap
   return controller;
 }
 
-export function bootstrap(app: App, callback: (controller?: AppController) => void) {
-  const globalVariable = window[globalVariableName];
+export function bootstrap(app: App, callback: (controller: AppController) => void) {
+  const globalVariable = (window as any)[globalVariableName];
   if (!globalVariable) {
     // HTML is not rendered yet
-    window[globalVariableName] = (preloadData) => {
-      window[globalVariableName].preloadData = preloadData;
+    (window as any)[globalVariableName] = (preloadData: any) => {
+      (window as any)[globalVariableName].preloadData = preloadData;
       bootstrap(app, callback);
     };
     return;

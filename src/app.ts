@@ -1,4 +1,4 @@
-import * as pathToRegexp from 'path-to-regexp';
+import pathToRegexp from 'path-to-regexp';
 import isFunction = require('lodash/isFunction');
 import { uriToString } from './util';
 import { AppController } from './client/controller';
@@ -115,7 +115,7 @@ export class App {
       return;
     }
 
-    const keys = [];
+    const keys: pathToRegexp.Key[] = [];
     const regexp = pathToRegexp(path, keys);
     this.routes.push({
       regexp,
@@ -135,7 +135,7 @@ export function matchRoute(app: App, uri: ParsedURI): RouteMatch {
     const route = routes[i];
     const matches = route.regexp.exec(uri.path);
     if (matches) {
-      const params = {};
+      const params: {[key: string]: string} = {};
       for (var j = 0; j < matches.length - 1; j++) {
         params[route.keys[j].name] = decodeURIComponent(matches[j + 1]);
       }

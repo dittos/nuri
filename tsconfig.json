@@ -4,8 +4,9 @@
     "sourceMap": true,
     "declaration": true,
     "module": "commonjs",
+    "esModuleInterop": true,
     "target": "es5",
-    "strictNullChecks": true,
+    "strict": true,
     "jsx": "react",
     "lib": [
       "dom",

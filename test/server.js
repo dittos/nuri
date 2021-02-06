@@ -43,7 +43,7 @@ describe('Server', () => {
 
     render(app, serverRequest).then(result => {
       assert.equal(result.getHTML(),
-        wrapHTML('<div data-reactroot="">Hello!</div>'));
+        wrapHTML('<div>Hello!</div>'));
       assert.deepEqual(result.preloadData, {
         path: serverRequest.path,
         post: { title: 'Hello!' }

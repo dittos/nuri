@@ -5,18 +5,18 @@ import {AppController} from './client/controller';
 
 export const ControllerContext = React.createContext<AppController | undefined>(undefined);
 
-function isLeftClickEvent(event) {
+function isLeftClickEvent(event: React.MouseEvent) {
   return event.button === 0;
 }
 
-function isModifiedEvent(event) {
+function isModifiedEvent(event: React.MouseEvent) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
 export interface LinkProps {
   to: string;
   queryParams?: {[key: string]: any};
-  onClick?: any;
+  onClick?: React.MouseEventHandler;
   target?: string;
   stacked?: boolean;
   returnToParent?: boolean;
@@ -30,7 +30,7 @@ export function Link(props: LinkProps & React.AnchorHTMLAttributes<any>) {
     query: queryParams,
   };
 
-  function handleClick(event) {
+  function handleClick(event: React.MouseEvent) {
     var allowTransition = true;
 
     if (onClick) onClick(event);
