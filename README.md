@@ -47,7 +47,7 @@ export default app;
 (Assuming you are using bundler)
 
 ```js
-import {injectLoader, render} from 'nuri/client';
+import {render} from 'nuri/client';
 import {app} from './app';
 
 function loader(path) {
