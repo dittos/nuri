@@ -25,7 +25,6 @@ export interface NavigationControllerDelegate<T> {
   willLoad(): void;
   didLoad(): void;
   didAbortLoad(): void;
-  didFailLoad(error: any): void;
   didCommitLoad(state: T, ancestorStates: T[]): void;
 }
 
@@ -124,9 +123,7 @@ export class NavigationController<T> {
         type = 'push';
       }
       this.commit(type, entry);
-    }, error => {
-      this.delegate.didFailLoad(error);
-    });
+    }); // TODO: handle onError
   }
 
   private load(

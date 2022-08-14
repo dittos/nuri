@@ -46,7 +46,6 @@ describe('NavigationController', () => {
       willLoad() { events.push('willLoad'); },
       didLoad() { events.push('didLoad') },
       didAbortLoad() { events.push('didAbortLoad') },
-      didFailLoad() { events.push('didFailLoad') },
       didCommitLoad() {},
     };
     controller = null;
@@ -389,30 +388,5 @@ describe('NavigationController', () => {
       }
     };
     controller.start();
-  });
-
-  it('should notify delegate about error while loading', done => {
-    const expectedError = 'errrrrror!';
-    const stateLoader = (request) => {
-      if (request.uri === '/fail') {
-        return defer(() => Promise.reject(expectedError));
-      }
-      return defer(() => Promise.resolve('blah'));
-    };
-    const initialLocation = {uri: '', token: null};
-    const history = new MockHistory(initialLocation);
-    controller = new NavigationController(delegate, stateLoader, history);
-    
-    delegate.didFailLoad = (error) => {
-      assert.deepEqual(events, [
-        'willLoad',
-        'didAbortLoad',
-        'willLoad',
-      ]);
-      assert.equal(error, expectedError);
-      done();
-    };
-    controller.start();
-    controller.push('/fail');
   });
 });

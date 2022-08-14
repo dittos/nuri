@@ -17,7 +17,6 @@ export interface AppControllerDelegate {
   willLoad(): void;
   didLoad(): void;
   didAbortLoad(): void;
-  didFailLoad(error: any): void;
   didCommitState(state: AppState, ancestorStates: AppState[]): void;
 }
 
@@ -39,10 +38,6 @@ export class AppController<L> {
 
       didAbortLoad() {
         delegates.forEach(delegate => delegate.didAbortLoad());
-      },
-
-      didFailLoad(error: any) {
-        delegates.forEach(delegate => delegate.didFailLoad(error));
       },
 
       didCommitLoad(state: AppState, ancestorStates: AppState[]) {

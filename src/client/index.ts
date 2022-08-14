@@ -12,7 +12,6 @@ export function render<L>(app: App<L>, container: Element, loader: L, preloadDat
     willLoad() {},
     didLoad() {},
     didAbortLoad() {},
-    didFailLoad() {},
     didCommitState(state, ancestorStates) {
       view.setState(state, ancestorStates);
     }
