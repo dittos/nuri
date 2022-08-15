@@ -6,7 +6,7 @@
   "module": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "test": "tsc && mocha --require babel-register",
+    "test": "tsc && mocha --require babel-register --recursive test/",
     "start": "tsc && webpack --context examples/ --config examples/webpack.config.js && babel-node examples/server.js",
     "build": "tsc --outDir deploy && cp package.json deploy/",
     "lint": "tslint 'src/**/*.ts'"

@@ -4,10 +4,10 @@ import sinon from 'sinon';
 import {Observable, Subject, of, defer} from 'rxjs';
 import {
   Redirect,
-} from '../lib/app';
+} from '../../lib/app';
 import {
   NavigationController,
-} from '../lib/client/navigation';
+} from '../../lib/client/navigation';
 
 class MockHistory {
   constructor(initialLocation) {
