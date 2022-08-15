@@ -1,8 +1,9 @@
 import {App, PreloadData} from '../app';
-import {containerElementId, globalVariableName} from '../bootstrap';
+import {containerElementId} from '../bootstrap';
 import {AppController} from './controller';
 import {AppView} from './view';
 import {createHistory} from './history';
+import {onPreloadDataReady} from './preload';
 
 export function render<L>(app: App<L>, container: Element, loader: L, preloadData?: PreloadData): AppController<L> {
   const history = createHistory();
@@ -18,19 +19,6 @@ export function render<L>(app: App<L>, container: Element, loader: L, preloadDat
   });
   controller.start(preloadData);
   return controller;
-}
-
-export function onPreloadDataReady(callback: (preloadData: any) => void) {
-  const globalVariable = (window as any)[globalVariableName];
-  if (!globalVariable.preloadData) {
-    // HTML is not rendered yet
-    (window as any)[globalVariableName] = (preloadData: any) => {
-      (window as any)[globalVariableName].preloadData = preloadData;
-      callback(preloadData);
-    };
-    return;
-  }
-  callback(globalVariable.preloadData);
 }
 
 export function bootstrap<L>(app: App<L>, loader: L, callback: (controller: AppController<L>) => void) {
