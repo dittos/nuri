@@ -55,7 +55,7 @@ describe('NavigationController', () => {
     const initialUri = '/posts/1234';
     const stateLoader = (request) => {
       assert.deepEqual(request.uri, initialUri);
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: null});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -92,7 +92,7 @@ describe('NavigationController', () => {
     const initialUri = '/posts/1234';
     const stateLoader = (request) => {
       assert.deepEqual(request.uri, initialUri);
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: 'initial'});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -109,7 +109,7 @@ describe('NavigationController', () => {
 
   it('should cancel inflight load', done => {
     const stateLoader = () => {
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const initialUri = '/posts/1234';
     const history = new MockHistory({uri: initialUri, token: null});
@@ -139,7 +139,7 @@ describe('NavigationController', () => {
       if (request.uri.path === '/redirect') {
         return of(new Redirect('/posts/1'));
       }
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: null});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -165,7 +165,7 @@ describe('NavigationController', () => {
       if (request.uri === '/redirect') {
         return of(new Redirect('/posts/1'));
       }
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: null});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -185,7 +185,7 @@ describe('NavigationController', () => {
   it('should restore previous state on passive location change', done => {
     const initialUri = '/posts/1234';
     const stateLoader = () => {
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: null});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -214,7 +214,7 @@ describe('NavigationController', () => {
     const initialUri = '/posts/1234';
     const stateLoader = (request) => {
       assert.ok(request.stacked);
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: null});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -234,6 +234,30 @@ describe('NavigationController', () => {
     controller.push('/test', {stacked: true});
   });
 
+  it('should escape stack if state loader requested', done => {
+    const initialUri = '/posts/1234';
+    const stateLoader = (request) => {
+      assert.ok(request.stacked);
+      return defer(() => Promise.resolve({state: 'blah', escapeStack: true}));
+    };
+    const history = new MockHistory({uri: initialUri, token: null});
+    controller = new NavigationController(delegate, stateLoader, history);
+
+    controller.start('initial');
+    delegate.didCommitLoad = (state, ancestorStates) => {
+      assert.deepEqual(events, [
+        'willLoad',
+        'didLoad',
+      ]);
+      assert.equal(history.locations.length, 2);
+      assert.equal(history.locations[1].uri, '/test');
+      assert.equal(state, 'blah');
+      assert.deepEqual(ancestorStates, []);
+      done();
+    };
+    controller.push('/test', {stacked: true});
+  });
+
   it('should follow non-stacked redirect on stacked-push', done => {
     const initialUri = '/posts/1234';
     const stateLoader = (request) => {
@@ -242,7 +266,7 @@ describe('NavigationController', () => {
         return of(new Redirect('/posts/1'));
       }
       assert.ok(!request.stacked);
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: null});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -270,7 +294,7 @@ describe('NavigationController', () => {
         return of(new Redirect('/posts/1', {stacked: true}));
       }
       assert.ok(request.stacked);
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: null});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -298,7 +322,7 @@ describe('NavigationController', () => {
         return of(new Redirect('/posts/1', {stacked: true}));
       }
       assert.ok(request.stacked);
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: null});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -325,7 +349,7 @@ describe('NavigationController', () => {
         return of(new Redirect('/posts/1', {stacked: true}));
       }
       assert.ok(!request.stacked);
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const history = new MockHistory({uri: initialUri, token: null});
     controller = new NavigationController(delegate, stateLoader, history);
@@ -346,7 +370,7 @@ describe('NavigationController', () => {
 
   it('should prune old entries', done => {
     const stateLoader = () => {
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const initialLocation = {uri: '0', token: 'first'};
     const history = new MockHistory(initialLocation);
@@ -368,7 +392,7 @@ describe('NavigationController', () => {
 
   it('should not prune old but active entries', done => {
     const stateLoader = () => {
-      return defer(() => Promise.resolve('blah'));
+      return defer(() => Promise.resolve({state: 'blah'}));
     };
     const initialLocation = {uri: '0', token: 'first'};
     const history = new MockHistory(initialLocation);

@@ -19,7 +19,10 @@ export interface LoadRequest {
   stacked: boolean;
 }
 
-export type LoadResult<T> = T | Redirect;
+export type LoadResult<T> = {
+  state: T;
+  escapeStack?: boolean;
+} | Redirect;
 
 export interface NavigationControllerDelegate<T> {
   willLoad(): void;
@@ -147,9 +150,9 @@ export class NavigationController<T> {
           return of({
             uri,
             token,
-            state: result,
+            state: result.state,
             isRedirect,
-            parentToken: isStacked ? sourceToken : null,
+            parentToken: isStacked && !result.escapeStack ? sourceToken : null,
           });
         }
       }));

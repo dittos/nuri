@@ -150,6 +150,10 @@ export function matchRoute<L>(app: App<L>, uri: ParsedURI): RouteMatch<L> {
 
 export function renderTitle<D, L>(app: App<L>, handler: RouteHandler<D, L>, data: D): string {
   const routeTitle = handler.renderTitle ? handler.renderTitle(data) : '';
+  return applyAppTitle(app, routeTitle);
+}
+
+export function applyAppTitle(app: App<any>, routeTitle: string): string {
   const titleFn: any = app.title;
   if (isFunction(titleFn)) {
     return titleFn(routeTitle);

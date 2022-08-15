@@ -1,5 +1,5 @@
 import {defer, of} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {catchError, map} from 'rxjs/operators';
 import {matchRoute, createRequest, isRedirect} from '../app';
 import {App, PreloadData, WireObject, RouteHandler, ParsedURI} from '../app';
 import {NavigationController, StateLoader} from './navigation';
@@ -7,11 +7,16 @@ import {History} from './history';
 import { parseURI, uriToString } from '../util';
 
 export type AppState = {
-  handler: RouteHandler<any, any>;
-  data: WireObject;
   scrollX?: number;
   scrollY?: number;
-};
+} & ({
+  status: 'ok';
+  handler: RouteHandler<any, any>;
+  data: WireObject;
+} | {
+  status: 'error';
+  error: any;
+});
 
 export interface AppControllerDelegate {
   willLoad(): void;
@@ -47,11 +52,12 @@ export class AppController<L> {
   }
 
   start(preloadData?: PreloadData) {
-    let preloadState;
+    let preloadState: AppState | undefined;
     if (preloadData) {
       const location = this.history.getLocation();
       const matchedRequest = this.matchRoute(parseURI(location.uri));
       preloadState = {
+        status: 'ok',
         handler: matchedRequest.handler,
         data: preloadData,
       };
@@ -84,8 +90,11 @@ export class AppController<L> {
     const load = handler.load;
     if (!load) {
       return of({
-        handler,
-        data: {},
+        state: {
+          status: 'ok' as const,
+          handler,
+          data: {},
+        }
       });
     }
     const request = createRequest<L>({
@@ -97,17 +106,31 @@ export class AppController<L> {
       stacked,
     });
     return defer(() => load(request))
-      .pipe(map(response => {
-        if (isRedirect(response)) {
-          return response;
-        } else {
-          const data: WireObject = response;
-          return {
-            handler,
-            data,
-          };
-        }
-      }));
+      .pipe(
+        map(response => {
+          if (isRedirect(response)) {
+            return response;
+          } else {
+            const data: WireObject = response;
+            return {
+              state: {
+                status: 'ok' as const,
+                handler,
+                data,
+              }
+            };
+          }
+        }),
+        catchError(error => {
+          return of({
+            state: {
+              status: 'error' as const,
+              error,
+            },
+            escapeStack: true,
+          });
+        })
+      );
   }
 
   private matchRoute(uri: ParsedURI) {
