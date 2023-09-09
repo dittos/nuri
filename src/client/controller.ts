@@ -56,10 +56,13 @@ export class AppController<L> {
     if (preloadData) {
       const location = this.history.getLocation();
       const matchedRequest = this.matchRoute(parseURI(location.uri));
-      preloadState = {
+      preloadState = matchedRequest ? {
         status: 'ok',
         handler: matchedRequest.handler,
         data: preloadData,
+      } : {
+        status: 'error',
+        error: 'Not Found',
       };
     }
     this.navigationController.start(preloadState);
@@ -86,7 +89,17 @@ export class AppController<L> {
 
   private loadState: StateLoader<AppState> = ({ uri, stacked }) => {
     const parsedURI = parseURI(uri);
-    const {handler, params} = this.matchRoute(parsedURI);
+    const match = this.matchRoute(parsedURI);
+    if (!match) {
+      return of({
+        state: {
+          status: 'error' as const,
+          error: 'Not Found',
+        },
+        escapeStack: true,
+      })
+    }
+    const {handler, params} = match;
     const load = handler.load;
     if (!load) {
       return of({

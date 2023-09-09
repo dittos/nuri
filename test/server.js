@@ -51,7 +51,7 @@ describe('Server', () => {
     }).catch(done);
   });
 
-  it('should render fallback request', done => {
+  it('should return errorStatus 404 on unknown route', done => {
     const app = createApp();
     // something similar to Express request object
     const serverRequest = {

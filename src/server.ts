@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
-import {App, Request, Response, WireObject, PreloadData, RouteHandler, DataUpdater} from './app';
+import {App, Request, Response, WireObject, PreloadData, RouteHandler, DataUpdater, isNotFound} from './app';
 import {matchRoute, renderTitle, createRequest, isRedirect} from './app';
 import {createRouteElement} from './components';
 import {wrapHTML} from './bootstrap';
@@ -25,7 +25,11 @@ export type RenderResult = {
 function noOpWriteData(updater: DataUpdater<any>) {}
 
 export function render<L>(app: App<L>, serverRequest: ServerRequest, loader: L): Promise<RenderResult> {
-  const {handler, params} = matchRoute(app, serverRequest);
+  const match = matchRoute(app, serverRequest);
+  if (!match) {
+    return Promise.resolve(createNotFoundResult());
+  }
+  const {handler, params} = match;
   const request = createRequest({
     loader,
     uri: serverRequest.url,
@@ -38,13 +42,21 @@ export function render<L>(app: App<L>, serverRequest: ServerRequest, loader: L):
     : Promise.resolve({});
   return loadPromise.then(
     response => createResult(app, request, handler, response),
-    err => err.status ?
-      createResult(app, request, handler, {}, err.status)
-      : Promise.reject<RenderResult>(err)
+    err => Promise.reject(err)
   );
 }
 
-function createResult<D, L>(app: App<L>, request: Request<L>, handler: RouteHandler<D, L>, response: Response<D>, errorStatus?: number) {
+function createNotFoundResult() {
+  return {
+    preloadData: {},
+    title: '',
+    meta: {},
+    errorStatus: 404,
+    getHTML: () => '',
+  };
+}
+
+function createResult<D, L>(app: App<L>, request: Request<L>, handler: RouteHandler<D, L>, response: Response<D>) {
   if (isRedirect(response)) {
     return {
       preloadData: {},
@@ -53,6 +65,9 @@ function createResult<D, L>(app: App<L>, request: Request<L>, handler: RouteHand
       redirectURI: response.uri,
       getHTML: () => '',
     };
+  }
+  if (isNotFound(response)) {
+    return createNotFoundResult();
   }
 
   const data = response;
@@ -65,12 +80,8 @@ function createResult<D, L>(app: App<L>, request: Request<L>, handler: RouteHand
     preloadData: data,
     title: renderTitle(app, handler, data),
     meta: handler.renderMeta ? handler.renderMeta(data) : {},
-    errorStatus,
     element,
     getHTML() {
-      if (errorStatus) {
-        return '';
-      }
       return wrapHTML(ReactDOMServer.renderToString(element));
     }
   };
