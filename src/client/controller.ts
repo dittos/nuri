@@ -1,6 +1,6 @@
 import {defer, of} from 'rxjs';
-import {catchError, map} from 'rxjs/operators';
-import {matchRoute, createRequest, isRedirect} from '../app';
+import {catchError, map, switchMap} from 'rxjs/operators';
+import {matchRoute, createRequest, isRedirect, matchLazyRoute, RouteMatch} from '../app';
 import {App, PreloadData, WireObject, RouteHandler, ParsedURI} from '../app';
 import {NavigationController, StateLoader} from './navigation';
 import {History} from './history';
@@ -91,6 +91,18 @@ export class AppController<L> {
     const parsedURI = parseURI(uri);
     const match = this.matchRoute(parsedURI);
     if (!match) {
+      const lazyMatch = matchLazyRoute<L>(this.app, parsedURI);
+      if (lazyMatch) {
+        return defer(() => lazyMatch.handler())
+          .pipe(
+            switchMap(handler => {
+              return this.loadStateFromMatch({
+                handler,
+                params: lazyMatch.params,
+              }, uri, parsedURI, stacked);
+            }),
+          );
+      }
       return of({
         state: {
           status: 'error' as const,
@@ -99,6 +111,10 @@ export class AppController<L> {
         escapeStack: true,
       })
     }
+    return this.loadStateFromMatch(match, uri, parsedURI, stacked);
+  };
+
+  private loadStateFromMatch(match: RouteMatch<L>, uri: string, parsedURI: ParsedURI, stacked: boolean) {
     const {handler, params} = match;
     const load = handler.load;
     if (!load) {

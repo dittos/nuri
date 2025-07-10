@@ -9,6 +9,12 @@ export type Route<L> = {
   handler: RouteHandler<any, L>;
 };
 
+export type LazyRoute<L> = {
+  regexp: RegExp;
+  keys: any[];
+  handler: LazyRouteHandler<any, L>;
+};
+
 // JSON-serializable "wire" types.
 export type WireObject = { [key: string]: any };
 
@@ -30,6 +36,8 @@ export type RouteHandler<D, L> = {
   renderMeta?: (data: D) => WireObject;
 };
 
+export type LazyRouteHandler<D, L> = () => Promise<RouteHandler<D, L>>;
+
 export type ParsedURI = {
   path: string;
   query: {[key: string]: any};
@@ -37,6 +45,11 @@ export type ParsedURI = {
 
 export type RouteMatch<L> = {
   handler: RouteHandler<any, L>;
+  params: {[key: string]: any};
+};
+
+export type LazyRouteMatch<L> = {
+  handler: LazyRouteHandler<any, L>;
   params: {[key: string]: any};
 };
 
@@ -101,10 +114,12 @@ export type PreloadData = WireObject;
 
 export class App<L> {
   routes: Route<L>[];
+  lazyRoutes: LazyRoute<L>[];
   title: string | ((routeTitle?: string) => string);
 
   constructor() {
     this.routes = [];
+    this.lazyRoutes = [];
     this.title = '';
   }
 
@@ -112,6 +127,16 @@ export class App<L> {
     const keys: pathToRegexp.Key[] = [];
     const regexp = pathToRegexp(path, keys);
     this.routes.push({
+      regexp,
+      keys,
+      handler,
+    });
+  }
+
+  lazyRoute<D>(path: string, handler: () => Promise<RouteHandler<D, L>>) {
+    const keys: pathToRegexp.Key[] = [];
+    const regexp = pathToRegexp(path, keys);
+    this.lazyRoutes.push({
       regexp,
       keys,
       handler,
@@ -125,6 +150,25 @@ export function createApp<L>(): App<L> {
 
 export function matchRoute<L>(app: App<L>, uri: ParsedURI): RouteMatch<L> | null {
   const routes = app.routes;
+  for (var i = 0; i < routes.length; i++) {
+    const route = routes[i];
+    const matches = route.regexp.exec(uri.path);
+    if (matches) {
+      const params: {[key: string]: string} = {};
+      for (var j = 0; j < matches.length - 1; j++) {
+        params[route.keys[j].name] = decodeURIComponent(matches[j + 1]);
+      }
+      return {
+        handler: route.handler,
+        params,
+      };
+    }
+  }
+  return null;
+}
+
+export function matchLazyRoute<L>(app: App<L>, uri: ParsedURI): LazyRouteMatch<L> | null {
+  const routes = app.lazyRoutes;
   for (var i = 0; i < routes.length; i++) {
     const route = routes[i];
     const matches = route.regexp.exec(uri.path);
