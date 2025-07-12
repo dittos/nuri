@@ -99,6 +99,7 @@ export class AppController<L> {
               return this.loadStateFromMatch({
                 handler,
                 params: lazyMatch.params,
+                routeId: undefined,
               }, uri, parsedURI, stacked);
             }),
           );

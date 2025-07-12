@@ -7,6 +7,7 @@ export type Route<L> = {
   regexp: RegExp;
   keys: any[];
   handler: RouteHandler<any, L>;
+  id: string | undefined;
 };
 
 export type LazyRoute<L> = {
@@ -46,6 +47,7 @@ export type ParsedURI = {
 export type RouteMatch<L> = {
   handler: RouteHandler<any, L>;
   params: {[key: string]: any};
+  routeId: string | undefined;
 };
 
 export type LazyRouteMatch<L> = {
@@ -123,13 +125,14 @@ export class App<L> {
     this.title = '';
   }
 
-  route<D>(path: string, handler: RouteHandler<D, L>) {
+  route<D>(path: string, handler: RouteHandler<D, L>, id?: string) {
     const keys: pathToRegexp.Key[] = [];
     const regexp = pathToRegexp(path, keys);
     this.routes.push({
       regexp,
       keys,
       handler,
+      id,
     });
   }
 
@@ -161,6 +164,7 @@ export function matchRoute<L>(app: App<L>, uri: ParsedURI): RouteMatch<L> | null
       return {
         handler: route.handler,
         params,
+        routeId: route.id,
       };
     }
   }

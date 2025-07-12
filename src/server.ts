@@ -12,6 +12,7 @@ export interface ServerRequest {
 }
 
 export type RenderResult = {
+  routeId: string | undefined;
   preloadData: PreloadData;
   title: string;
   meta: WireObject;
@@ -29,7 +30,7 @@ export function render<L>(app: App<L>, serverRequest: ServerRequest, loader: L):
   if (!match) {
     return Promise.resolve(createNotFoundResult());
   }
-  const {handler, params} = match;
+  const {handler, params, routeId} = match;
   const request = createRequest({
     loader,
     uri: serverRequest.url,
@@ -41,7 +42,7 @@ export function render<L>(app: App<L>, serverRequest: ServerRequest, loader: L):
     handler.load(request)
     : Promise.resolve({});
   return loadPromise.then(
-    response => createResult(app, request, handler, response),
+    response => createResult(app, request, handler, response, routeId),
     err => Promise.reject(err)
   );
 }
@@ -53,10 +54,11 @@ function createNotFoundResult() {
     meta: {},
     errorStatus: 404,
     getHTML: () => '',
+    routeId: undefined,
   };
 }
 
-function createResult<D, L>(app: App<L>, request: Request<L>, handler: RouteHandler<D, L>, response: Response<D>) {
+function createResult<D, L>(app: App<L>, request: Request<L>, handler: RouteHandler<D, L>, response: Response<D>, routeId: string | undefined) {
   if (isRedirect(response)) {
     return {
       preloadData: {},
@@ -64,6 +66,7 @@ function createResult<D, L>(app: App<L>, request: Request<L>, handler: RouteHand
       meta: {},
       redirectURI: response.uri,
       getHTML: () => '',
+      routeId: undefined,
     };
   }
   if (isNotFound(response)) {
@@ -83,6 +86,7 @@ function createResult<D, L>(app: App<L>, request: Request<L>, handler: RouteHand
     element,
     getHTML() {
       return wrapHTML(ReactDOMServer.renderToString(element));
-    }
+    },
+    routeId,
   };
 }
